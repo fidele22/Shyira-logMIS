@@ -21,7 +21,7 @@ const LogisticRequestForm = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/stocks');
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/stocks`);
         setItemOptions(response.data);
         // Set stock quantities from the response
         const quantities = response.data.reduce((acc, item) => {
@@ -71,7 +71,7 @@ const LogisticRequestForm = () => {
         }
 
         // Use Axios to fetch user profile
-        const response = await axios.get('http://localhost:5000/api/users/profile', {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -116,7 +116,7 @@ const LogisticRequestForm = () => {
          return;
        }
 
-      const response = await axios.post('http://localhost:5000/api/UserRequest/submit', {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/submit`, {
         department,
         items: JSON.stringify(items),
         date,
