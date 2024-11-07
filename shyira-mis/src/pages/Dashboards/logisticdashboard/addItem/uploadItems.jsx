@@ -32,7 +32,7 @@ const handleUpload = async () => {
     console.log(jsonData); // Log the data to see its structure
 
     try {
-      await axios.post('http://localhost:5000/api/uploadData', jsonData, {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/uploadData`, jsonData, {
         headers: {
           'Content-Type': 'application/json'
         }

@@ -14,7 +14,7 @@ const DataDisplay = ({ onItemSelect }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/stocks');
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/stocks`);
         setData(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -31,9 +31,9 @@ const handleDelete = async (id) => {
   const isConfirmed = window.confirm("Are you sure you want to delete this item?");
   if (isConfirmed) {
     try {
-      await axios.delete(`http://localhost:5000/api/stocks/${id}`);
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/stocks/${id}`);
       // Fetch updated data
-      const response = await axios.get('http://localhost:5000/api/stocks');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/stocks`);
       setData(response.data);
     } catch (error) {
       console.error('Error deleting item:', error);
