@@ -46,7 +46,7 @@ const togglePasswordVisibility = () => {
     e.preventDefault();
     if (validateLoginForm()) {
       try {
-        const res = await axios.post('http://localhost:5000/api/login', { email, password });
+        const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/login`, { email, password });
         console.log('Login response:', res.data); // Check what is returned
         const { token, role } = res.data;
   
