@@ -36,10 +36,7 @@ const Navbar = ({ setCurrentPage }) => {
 
   return (
     <div className="navigation">
-      <div className="nav-logo">
-      <h1>Lmis</h1>
-      </div>
-     
+      <h2>Logistic Dashboard</h2>
       <ul>
         <li onClick={() => setCurrentPage('overview')}>
           <FaHome /> Overview
@@ -76,11 +73,13 @@ const Navbar = ({ setCurrentPage }) => {
 
       <u><h2>Settings</h2></u>
       <ul>
-        <li onClick={() => setCurrentPage('user-profile')}>
+        <li onClick={() => setCurrentPage('logistic-profile')}>
           <FaUser /> Profile
         </li>
-        <li onClick={() => setCurrentPage('help-center')}> <FaLifeRing />Help Center</li>
-     
+        <li onClick={() => setCurrentPage('logistic-profil')}> <FaLifeRing />Help Center</li>
+        <li onClick={handleLogout}>
+          <FaSignOutAlt /> Logout
+        </li>
       </ul>
     </div>
   );

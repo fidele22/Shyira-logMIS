@@ -5,7 +5,6 @@ import { FaQuestionCircle, FaEdit,FaTimes, FaTimesCircle, FaCheck,
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import Swal from 'sweetalert2'; 
 import { useDropzone } from 'react-dropzone';
 import './modelMessage.css'  // Import Dropzone for file attachment
 
@@ -75,30 +74,15 @@ const ApprovedRequests = () => {
 const handleReceivedClick = async (requestId) => {
     try {
       const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/LogisticRequest/received/${requestId}`);
-      // Show success message using SweetAlert2
-      Swal.fire ({
-        title: 'Success!',
-        text: 'Reception sign and update item stock successfully',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
+      setModalMessage('Reception sign and update stock successfully');
+      setIsSuccess(true); // Set the success state
+      setShowModal(true); // Show the modal
       fetchApprovedRequests(); // Refresh the list after posting
     } catch (error) {
       console.error('Error marking request as received:', error);
-         // Show success message using SweetAlert2
-         Swal.fire ({
-          title: 'Error!',
-          text: 'Failed to mark request as received',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          customClass: {
-            popup: 'custom-swal', // Apply custom class to the popup
-          }
-        });
-     
+      setModalMessage('Failed to mark request as received');
+      setIsSuccess(false); // Set the error state
+      setShowModal(true); // Show the modal
     }
   };
   const handleRequestClick = async (requestId) => {
@@ -165,8 +149,8 @@ const handleReceivedClick = async (requestId) => {
   return (
     <div className={`requist ${selectedRequest ? 'dim-background' : ''}`}>
      
-      <form onSubmit={handleSearchRequest}>
-        <div className="search-form">
+      <h2>List of approved Order for Item</h2>
+      <form onSubmit={handleSearchRequest} className="search-form">
         <div className='search-date'>
           <label htmlFor="">Search by date</label>
           <input
@@ -179,28 +163,24 @@ const handleReceivedClick = async (requestId) => {
         </div>
         
         <button type="submit" className='search-btn'>Search</button>
-        </div>
-        
       </form>
-      <div className="order-navigation">
-        <div className="navigation-title">
-          <h2>Requisition of items form logistic office approved</h2>
-        </div>
+
+      <div className="approved-navigate-request">
         <ul>
           {filteredRequests.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
-                Requisition Form from <b>logistic office</b> for ordering items done on {new Date(request.createdAt).toDateString()}
-                <span className="status-badge">Approved</span>
+                Requisition Form of logistic <b>{request.department}</b> done on {new Date(request.createdAt).toDateString()}
+              <label htmlFor=""><FaCheckCircle/> Approved</label>
               </p>
+
             </li>
           ))}
         </ul>
-     
       </div>
      
       {selectedRequest && (
-        <div className="request-details-overlay">
+        <div className="approved-request-overlay">
           <div className="form-navigation">
             <button className='request-dowload-btn' onClick={downloadPDF}>Download Pdf</button>
             <button className='mark-received-btn' onClick={handleReceivedClick}>Mark as Received</button> 
@@ -240,16 +220,15 @@ const handleReceivedClick = async (requestId) => {
                   ))}
                 </tbody>
               </table>
-              <div className="signature-section">
+              <div className="approved-signature-section">
                 <div className='logistic-signature'>
+                  <h3>Logistic Office:</h3>
+                  <label htmlFor="">Prepared By:</label>
                   {logisticUsers.map(user => (
-                    <div key={user._id} className="logistic-signature">
-                      <label className='signature-title'>Logistic Office:</label>
-                      <label htmlFor="">Prepared By:</label>
+                    <div key={user._id} className="logistic-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`}
-                        className='signature-img' />
+                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -258,16 +237,13 @@ const handleReceivedClick = async (requestId) => {
                 </div>
 
                 <div className='daf-signature'>
-                 
-                 
+                  <h3>DAF Office:</h3>
+                  <label htmlFor="">Verified By:</label>
                   {dafUsers.map(user => (
-                    <div key={user._id} className="daf-signature">
-                      <label className='signature-title'> DAF Office:</label>
-                      <label htmlFor="">Verified By:</label>
+                    <div key={user._id} className="daf-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
-                        className='signature-img' />
+                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -275,14 +251,13 @@ const handleReceivedClick = async (requestId) => {
                   ))}
                 </div>
                 <div className='daf-signature'>
+                  <h3>DG Office:</h3>
+                  <label htmlFor="">Approved By:</label>
                   {dgUsers.map(user => (
-                    <div key={user._id} className="daf-signature">
-                        <label className='signature-title'> DG Office:</label>
-                        <label htmlFor="">Approved By:</label>
+                    <div key={user._id} className="daf-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
-                        className='signature-img' />
+                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -290,16 +265,48 @@ const handleReceivedClick = async (requestId) => {
                   ))}
                 </div>
 
-             
-              </div>
-              <div className='footer-img'>
-                   <img src="/image/footerimg.png" alt="Logo" className="logo" />
+                {/* File Attachment Section 
+                <div className="file-attachments">
+                  <h3>File Attachments:</h3>
+                  <div {...getRootProps({ className: 'dropzone' })}>
+                    <input {...getInputProps()} />
+                    <p>Drag 'n' drop some files here, or click to select files</p>
+                  </div>
+                  <ul>
+                    {fileAttachments.map((file, index) => (
+                      <li key={index}>
+                        <a href={`http://localhost:5000/${file.path}`} target="_blank" rel="noopener noreferrer">
+                          {file.originalname}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+                */}
+              </div>
             </div> 
           </div> 
         </div> 
       )}
-   
+       {/* Modal pop message on success or error message */}
+       {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {isSuccess ? (
+              <div className="modal-success">
+                <FaCheckCircle size={54} color="green" />
+                <p>{modalMessage}</p>
+              </div>
+            ) : (
+              <div className="modal-error">
+                <FaTimesCircle size={54} color="red" />
+                <p>{modalMessage}</p>
+              </div>
+            )}
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

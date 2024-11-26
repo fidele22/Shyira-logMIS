@@ -1,30 +1,29 @@
 
 /******************* styling requisition receiced form**/
 /* General styling */
-.request {
+.requist {
     padding: 20px;
     background-color: white;
   }
-.search-form{
-    background-color: aliceblue;
-    height: 100px;
-    display: flex;
-}
-.search-department input[type='text']{
+
+  .search-department {
+    width: auto;
+
+  }
+  .search-department input[type='text']{
   height: 50px;
   font-size: 20px;
   border-top: none;
   border-left: none;
   border-right: none;
   }
+
   .search-date input[type='date']{
     height: 50px;
     font-size: 20px;
-    width: 60%;
+    width: 25%;
     border-radius: 5px;
-    border-top: none;
-    border-left: none;
-    border-right: none;
+    border: none;
     padding-left: 10px;
     }
   .search-date label{
@@ -34,10 +33,23 @@
   .search-btn{
     font-size: 20px;
     width: 100px;
-    height: 5vh;
   }
   .search-date{
     display: flex;
+  }
+  .navigate-request p{
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .navigate-request li{
+    display: flex;
+  }
+  .navigate-request p span{
+    color: red;
+    padding: 10PX;
+  }
+  .navigate-request p:hover{
+    color: blue;
   }
   .image-request-recieved{
     margin-top: 3rem;
@@ -45,10 +57,11 @@
   .image-request-recieved img{
     width: 100%;
     height: 20vh;
+ 
     margin-bottom: 4rem;
   }
   .request-recieved-heading h1{
-   font-size: 12px;
+   font-size: 22px;
    padding: 10px;
   }
   .navigation ul {
@@ -89,7 +102,6 @@
   }
   .request-details h2{
     text-align: center;
-    font-size: 16px;
   }
   .date-done{
     position: absolute;
@@ -120,16 +132,10 @@
     border-radius: 5px;
     cursor: pointer;
   }
-  .approve-request-btn{
-    background-color: blue;
-  }
   .request-edit-btn{
     background-color: rgb(26, 25, 25);
     font-size: 18px;
     color: white;
-  }
-  .reject-button{
-    background-color: rgb(165, 64, 64);
   }
   .mark-received-btn{
     background-color: rgb(0, 110, 255);
@@ -144,47 +150,43 @@
     right: 0;
     padding: 10px;
     color: rgb(215, 16, 16);
-    font-size: 40px;
+    font-size: 50px;
     border-radius: 50%;
     cursor: pointer;
     text-align: center;
   }
+  .request-cancel-btn{
+    position: absolute;
+    background-color: rgb(157, 29, 29);
+    padding: 10px;
+ 
+    font-size: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    text-align: center;
+  }
+  .request-cancel-btn:hover{
+    background-color: rgb(214, 13, 13);
+  }
   .verify-requisition{
     background-color: rgb(41, 130, 225);
-    font-size: 14px;
+    font-size: 16px;
     
   }
   .request-dowload-btn{
     background-color: green;
-    font-size: 14px;
+    font-size: 18px;
 
-  }
-  .update-cancel-btn{
-    background-color: rgb(245, 121, 121);
   }
   .submit-an-update:hover{
     background-color: blue;
   }
-/*******signatures styling****************/
-.signature-section{   
-    display: flex;
-    gap: 10px;
-
-}
-.signature-section div{
-    padding: 10px; 
-}
-.signature-title{
-    font-size: 16px;
-    color:rgb(31, 30, 30);
-}
-.signature-img{
-  width: 150px;
-}
-.hod-signature,.daf-signature,.logistic-signature{
-    padding: 0;
-}
-
-.footer-img img{
-    width: 100%;
-}
+  
+  .hod{
+    margin-top: 2rem;
+   
+  }
+  .hod p{
+    font-size: 25px;
+    font-weight: 600;
+  }

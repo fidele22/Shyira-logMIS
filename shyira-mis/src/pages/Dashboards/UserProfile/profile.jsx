@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Swal from 'sweetalert2'; 
 import './profile.css'; // Import the CSS file for styles
 
 const UserProfile = () => {
@@ -39,31 +38,9 @@ const UserProfile = () => {
         },
       });
       setUser (response.data);
-         // Show success message using SweetAlert2
-         Swal.fire ({
-          title: 'Success!',
-          text: 'profile updated successfully',
-          icon: 'success',
-          confirmButtonText: 'OK',
-          customClass: {
-            popup: 'custom-swal', // Apply custom class to the popup
-          }
-        });
-        
       setIsEditing(false); // Exit editing mode after successful update
     } catch (err) {
-   
-         // Show success message using SweetAlert2
-         Swal.fire ({
-          title: 'Error',
-          text: ' Failed to update profile',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          customClass: {
-            popup: 'custom-swal', // Apply custom class to the popup
-          }
-        });
-        
+      setError(err.message);
     }
   };
 
@@ -72,7 +49,7 @@ const UserProfile = () => {
 
   return (
     <div className="user-profile">
-      <h2>Profile Setting</h2>
+      <h2>User Profile</h2>
       <div className="profile-header">
         <img
           src={`https://api.dicebear.com/6.x/initials/svg?seed=${user.firstName}&backgroundColor=E3F2FD`}

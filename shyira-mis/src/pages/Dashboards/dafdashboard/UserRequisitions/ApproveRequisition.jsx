@@ -92,30 +92,26 @@ const ApprovedRequests = () => {
   };
 
  // Function to generate and download PDF
- // Function to generate and download PDF
  const downloadPDF = async () => {
   const input = document.getElementById('pdf-content');
   if (!input) {
     console.error('Element with ID pdf-content not found');
     return;
   }
-
+  
   try {
-    // Use html2canvas to capture the content of the div, including the image signatures
-    const canvas = await html2canvas(input, {
-      allowTaint: true,
-      useCORS: true, // This allows images from different origins to be included in the canvas
-    });
-
+    const canvas = await html2canvas(input);
     const data = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const pdf = new jsPDF();
     const imgProps = pdf.getImageProperties(data);
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth - 20; // Subtract the margin from the width
+    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
-    // Add the image content into the PDF and download
-    pdf.addImage(data, 'PNG', 10, 10, pdfWidth - 20, pdfHeight); // Adjust the margins if needed
-    pdf.save('requisition-form-with-signatures.pdf');
+    pdf.addImage(data, 'PNG', 10, 10, imgWidth, imgHeight); // 10 is the margin
+    pdf.save('requisition-form.pdf');
   } catch (error) {
     console.error('Error generating PDF:', error);
   }
@@ -124,61 +120,49 @@ const ApprovedRequests = () => {
 
   return (
     <div className="approved-requests-page">
-   
-      <form onSubmit={handleSearchRequest} >
-      <div className="search-form">
-
+      <h2>Approved Requests</h2>
+      <form onSubmit={handleSearchRequest} className="search-form">
+       <div className='search-department'>
+        <label htmlFor="">Search by department</label>
+       <input
+          type="text"
+          name="department"
+          placeholder="Search by department"
+          value={searchParams.department}
+          onChange={handleSearchChange}
+        />
+       </div>
       
-<div className='search-department'>
- <label htmlFor="">Search by department</label>
-<input
-   type="text"
-   name="department"
-   placeholder="Search by department"
-   value={searchParams.department}
-   onChange={handleSearchChange}
- />
-</div>
+        <div className='search-date'>
+        <label htmlFor="">Search by date</label>
+        <input
+          type="date"
+          name="date"
+          placeholder="Search by date"
+          value={searchParams.date}
+          onChange={handleSearchChange}
+        />
+        </div>
+        
+        <button type="submit" className='search-btn'>Search</button>
+      </form>
 
- <div className='search-date'>
- <label htmlFor="">Search by date</label>
- <input
-   type="date"
-   name="date"
-   placeholder="Search by date"
-   value={searchParams.date}
-   onChange={handleSearchChange}
- />
- </div>
- 
- <button type="submit" className='search-btn'>Search</button>
- </div>
-</form>
-<div className="order-navigation">
-<div className="navigation-title">
-<h2>User's Requisition for Items Approved</h2>
-</div>
-{filteredRequests.length > 0 ? (
+      <div className="approved-navigate-request">
         <ul>
           {filteredRequests.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
               Requisition Form from department of <b>{request.department}</b> done on {new Date(request.createdAt).toDateString()}
-             <span className='status-approved'><FaCheckCircle/> Approved</span>
+             {/*<span>{request.clicked ? '' : 'New Request: '}</span>*/}  <label htmlFor=""><FaCheckCircle/> Approved</label>
             </p>
             </li>
           ))}
         </ul>
-
-      ) : (
-  <p>No requests found for the given search criteria.</p>
-)}
-
       </div>
 
       {selectedRequest && (
 
-        <div className="request-details-overlay">
+        <div className="approved-request-overlay">
          <div className="form-navigation">
          
        
@@ -198,8 +182,7 @@ const ApprovedRequests = () => {
             <h1>DISTRIC: NYABIHU</h1>
             <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
             <h1>DEPARTMENT: <span>{selectedRequest.department}</span>  </h1>
-            <h1>SERVICE: <span>{selectedRequest.service}</span>  </h1>
-            <u><h2>REQUISITON FORM</h2></u>  
+
           </div>
          <table>
            <thead>
@@ -223,25 +206,25 @@ const ApprovedRequests = () => {
              ))}
            </tbody>
          </table>
-         <div className="signature-section">
-         <div className='hod-signature'>
-         <label className='signature-title'>Name of head of {selectedRequest.department}</label>
+         <div className="approved-signature-section">
+           <div >
+             <h3>HOD Name:</h3>
              <label>prepared By:</label> 
             <p>{selectedRequest.hodName}</p>
              {selectedRequest.hodSignature ? (
-               <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" className='signature-img' />
+               <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
              ) : (
                <p>No HOD signature available</p>
              )}
            </div>
            <div className='logistic-signature'>
+                  <h3>Logistic Office:</h3>
+                  <label htmlFor="">Verified By:</label>
                     {logisticUsers.map(user => (
-                      <div key={user._id} className="logistic-signature">
-                         <label className='signature-title'>Logistic Office</label>
-                         <label htmlFor="">Verified By:</label>
+                      <div key={user._id} className="logistic-user">
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="signature" className='signature-img' />
+                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                         ) : (
                           <p>No signature available</p>
                         )}
@@ -249,19 +232,19 @@ const ApprovedRequests = () => {
                     ))}
                   </div>
          <div className="daf-signature">
+         <h3>DAF:</h3>
+         <label htmlFor="">Approved By:</label>
          {dafUsers.map(user => (
-                      <div key={user._id} className="daf-signature">
-                        <label className='signature-title'>DAF</label>
-                        <label htmlFor="">Approved By:</label>
+                      <div key={user._id} className="logistic-user">
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="signature" className='signature-img' />
+                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                         ) : (
                           <p>No signature available</p>
                         )}
                       </div>
                     ))}
-          </div>      
+          </div>         
          </div>
          </div>
         

@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser , FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
+import { FaUser } from 'react-icons/fa';
 import './Navbar.css';
-import axios from 'axios';
 
-function Navbar({ setCurrentPage }) {
-  const [user, setUser ] = useState({}); // Initialize user as an empty object
+function Navbar() {
   const [userName, setUserName] = useState('');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // Get the current tab's ID from sessionStorage
       const currentTab = sessionStorage.getItem('currentTab');
+
       if (!currentTab) {
         console.error('No tab ID found in sessionStorage');
         return;
       }
 
+      // Retrieve the token using the current tab ID
       const token = sessionStorage.getItem(`token_${currentTab}`);
+
+      console.log('Token:', token); // Debug log to check if the token is correctly retrieved
+
       if (!token) {
         console.error('No token found for the current tab');
         return;
@@ -29,9 +32,11 @@ function Navbar({ setCurrentPage }) {
           },
         });
 
+        console.log('Response status:', response.status); // Debug log
+
         if (response.ok) {
           const data = await response.json();
-          setUser (data); // Set the user state
+          console.log('User data:', data); // Debug log
           const fullName = `${data.firstName} ${data.lastName}`;
           setUserName(fullName);
         } else {
@@ -43,68 +48,12 @@ function Navbar({ setCurrentPage }) {
     };
 
     fetchUserData();
-
-    const handleOutsideClick = (event ) => {
-      if (!event.target.closest('.user-dropdown')) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleOutsideClick);
-
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-    };
   }, []);
-
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/logout`);
-      sessionStorage.clear();
-      window.location.href = '/';
-      window.history.pushState(null, null, '/');
-      window.onpopstate = () => {
-        window.location.href = '/';
-      };
-    } catch (error) {
-      console.error('Error during logout:', error);
-      alert('Error while logging out');
-    }
-  };
 
   return (
     <div className='Navbar'>
       <ul className='navbar-menu'>
-        <li className="user-dropdown" onClick={toggleDropdown}>
-          {user ? (
-            <>
-              <img
-                src={`https://api.dicebear.com/6.x/initials/svg?seed=${user.firstName}&backgroundColor=E3F2FD`}
-                alt={`${user.firstName} ${user.lastName}`}
-                className="profile-avatar"
-              />
-              {userName} <FaChevronDown />
-            </>
-          ) : (
-            <span>Loading...</span>
-          )}
-          {dropdownOpen && (
-            <div className="dropdown-menu">
-              <ul>
-                <li onClick={() => setCurrentPage('user-profile')}>
-                  <FaUser  /> Profile
-                </li>
-                <li onClick={handleLogout}>
-                  <FaSignOutAlt /> Logout
-                </li>
-              </ul>
-            </div>
-          )}
-        </li>
+        <h1> <FaUser /> {userName}</h1>
       </ul>
     </div>
   );

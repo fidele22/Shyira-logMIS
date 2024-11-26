@@ -5,7 +5,7 @@ import ViewOrder from './viewLogisticRequest';
 import VerifiedOrder from './verifiedlogisticRequest';
 import ApprovedOrder from './ApprovedlogisticRequest';
 import ReceivedOrder from '../../logisticdashboard/OrderSupply/RecievedOrder';
-import RejectedOrder from './rejecteditemorder';
+//import RejectedOrder from '../requestDecision/rejectedRequisition'
 //import ItemRequisitionStatus from './RequisitionStatus';
 
 
@@ -21,7 +21,7 @@ const LogisticOrder = () => {
     <div className="requistion">
       <div className="links">
       <button className='view-requisition' onClick={() => setActiveComponent('viewOrder')} >
-          <FaEye /> View item Order
+          <FaEye /> View Order
         </button>
         
       <button className='view-requisition' onClick={() => setActiveComponent('verifiedOrder')} >
@@ -51,8 +51,6 @@ const LogisticOrder = () => {
 
       )  : activeComponent === 'recieved-order' ? (
         <ReceivedOrder />
-      )   : activeComponent === 'rejected-order' ? (
-        <RejectedOrder />
       )  :(
         <div>
     <p>Navigate to what you want to look.</p>

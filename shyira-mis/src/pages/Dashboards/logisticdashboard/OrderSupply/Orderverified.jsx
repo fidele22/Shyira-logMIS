@@ -18,7 +18,7 @@ const ForwardedRequests = () => {
 
   const fetchLogisticUsers = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/logistic-users`);
+      const response = await axios.get('http://localhost:5000/api/users/logistic-users');
       setLogisticUsers(response.data);
     } catch (error) {
       console.error('Error fetching logistic users:', error);
@@ -27,7 +27,7 @@ const ForwardedRequests = () => {
 
   const fetchForwardedRequests = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/LogisticRequest/verified`);
+      const response = await axios.get('http://localhost:5000/api/LogisticRequest/verified');
       setForwardedRequests(response.data);
     } catch (error) {
       console.error('Error fetching forwarded requests:', error);
@@ -73,7 +73,7 @@ const ForwardedRequests = () => {
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/LogisticRequest/update-verified/${selectedRequest._id}`, formData);
+      const response = await axios.put(`http://localhost:5000/api/LogisticRequest/update-verified/${selectedRequest._id}`, formData);
       setSelectedRequest(response.data);
       setIsEditing(false);
       setForwardedRequests(prevRequests =>
@@ -112,7 +112,7 @@ const ForwardedRequests = () => {
         }
 
         // Use Axios to fetch user profile
-        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/profile`, {
+        const response = await axios.get('http://localhost:5000/api/users/profile', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -133,13 +133,10 @@ const ForwardedRequests = () => {
   if (!user) return <p>Loading...</p>;
 
   return (
-    <div className={`request ${selectedRequest ? 'dim-background' : ''}`}>
+    <div className={`verified-requist ${selectedRequest ? 'dim-background' : ''}`}>
      
-      <div className="order-navigation">
-        <div className="navigation-title">
-        <h2>List of logistic Requisition Verified</h2>
-        </div>
-    
+      <div className="verified-request-navigation">
+      <h2>List of logistic Requisition Verified</h2>
         <ul>
           {forwardedRequests.slice().reverse().map((request, index) => (
             <li key={index}>
@@ -194,16 +191,15 @@ const ForwardedRequests = () => {
                   </tbody>
                 </table>
 
-                <div className="signature-section">
+                <div className="daf-signature-section">
                   <div className='logistic-signature'>
                   <h3>Logistic Office:</h3>
                   <label htmlFor="">Prepared By:</label>
                     {logisticUsers.map(user => (
-                      <div key={user._id} className="logistic-signature">
+                      <div key={user._id} className="logistic-user">
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
-                          className='signature-img' />
+                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                         ) : (
                           <p>No signature available</p>
                         )}
@@ -214,15 +210,12 @@ const ForwardedRequests = () => {
                     <h3>DAF Office:</h3>
                     <label htmlFor="">verified By</label>
                   <p>{user.firstName} {user.lastName}</p>
-                  {user.signature && <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="Signature" 
-                  className='signature-img' />}
+                  {user.signature && <img src={`http://localhost:5000/${user.signature}`} alt="Signature" />}
                   </div>
                   
                 </div>
                 <button className='edit-btn' onClick={handleEditClick}>Edit</button>
-                <div className='footer-img'>
-                   <img src="/image/footerimg.png" alt="Logo" className="logo" />
-                </div>
+                
 
 
             

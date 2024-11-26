@@ -4,7 +4,7 @@ import { FaEye , FaEdit,FaSpinner, FaTimes, FaTimesCircle, FaCheck, FaCheckCircl
 import VeiwUserRequisition from './ViewRequisition'; 
 import ItemRequisitionRecieved from '../receivedRequisitions/itemRequestReceived';
 import ItemRequisitionApproved from './RequisitionStatus';
-import ItemRequisitionRejected from '../receivedRequisitions/ItemRequestRejected';
+import ItemRequisitionRejected from '../receivedRequisitions/itemRequestReceived';
 
 const UserRequesition = () => {
 

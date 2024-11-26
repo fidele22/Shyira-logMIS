@@ -4,9 +4,9 @@ import { FaEye , FaEdit,FaSpinner, FaTimes, FaTimesCircle, FaCheck, FaCheckCircl
 import ViewFuelOrder from './fuelOrder'; 
 import VerifiedFuelOrder from './verifiedFuelOrder';
 import ApprovedFuelOrder from './approvedFuelOrder';
-import RecievedFuelOrder from './recievedfuelorder';
-import RejectedFuelOrder from './rejectedfuelorder';
-
+//import ReceivedFuelOrder from '../../logisticdashboard/OrderSupply/RecievedOrder';
+//import RejectedOrder from '../requestDecision/rejectedRequisition'
+//import ItemRequisitionStatus from './RequisitionStatus';
 
 
 const LogisticFuelOrder = () => {
@@ -48,12 +48,6 @@ const LogisticFuelOrder = () => {
         <VerifiedFuelOrder />
       )  : activeComponent === 'approvedFuelOrder' ? (
         <ApprovedFuelOrder />
-
-      )  : activeComponent === 'recievedFuelorder' ? (
-        <RecievedFuelOrder />
-
-      )  : activeComponent === 'rejectedFuelorder' ? (
-        <RejectedFuelOrder />
 
       )   :(
         <div>

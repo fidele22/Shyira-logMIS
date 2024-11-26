@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaQuestionCircle, FaEdit, FaTimes,FaCheckCircle, FaTimesCircle,FaTrash,FaCheck } from 'react-icons/fa';
 import axios from 'axios';
-import Swal from 'sweetalert2'; 
-import './stylingfuelorders.css'
 
 //import './ViewRequest.css'; // Import CSS for styling
 
@@ -13,6 +11,11 @@ const ForwardedRequests = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [logisticUsers, setLogisticUsers] = useState([]);
+
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [modalMessage, setModalMessage] = useState(''); //
+  const [isSuccess, setIsSuccess] = useState(true);
+
 
   useEffect(() => {
     fetchForwardedRequests();
@@ -82,16 +85,7 @@ const ForwardedRequests = () => {
       setForwardedRequests(prevRequests =>
         prevRequests.map(req => (req._id === response.data._id ? response.data : req))
       );
-      Swal.fire ({
-        title: 'Updated!',
-        text: 'requisition updated successful',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
-    alert('')
+    alert('requisition updated successful')
    
     } catch (error) {
       console.error('Error updating request:', error);
@@ -101,48 +95,23 @@ const ForwardedRequests = () => {
  //
  const handleApproveSubmit = async (e) => {
   e.preventDefault();
-  Swal.fire({
-    title: 'Are you sure?',
-    text: 'Do you want to approve this fuel logistic requisition with signing?,',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, Approve it!',
-    customClass: {
-      popup: 'custom-swal', // Apply custom class to the popup
-    }
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
+  try {
        // Forward the updated request to the approved collection
        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/logisticFuel/verified/${selectedRequest._id}`);
        setSelectedRequest(response.data);
-       Swal.fire ({
-        title: 'Success!',
-        text: 'Approve fuel order successfully',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
+    
+       setModalMessage('logistic requestion verified successfully');
+       setIsSuccess(true); // Set the success state
+       setShowModal(true); // Show the modal
+
          // Optionally refresh the list
     fetchForwardedRequests();
   } catch (error) {
     console.error('Error for approving request:', error);  
-    Swal.fire ({
-      title: 'Error!',
-      text: 'Failed to approve fuel order',
-      icon: 'error',
-      confirmButtonText: 'OK',
-      customClass: {
-        popup: 'custom-swal', // Apply custom class to the popup
-      }
-    });
+    setModalMessage('Failed to verify requisition');
+    setIsSuccess(false); // Set the success state
+    setShowModal(true); // Show the modal
   }
-}
-});
 } 
 
 //reject fuel order
@@ -150,50 +119,24 @@ const ForwardedRequests = () => {
 const handleRejectSubmit = async () => {
 
     if (!selectedRequest) return;
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'Do you want to reject this fuel logistic requisition with signing?,',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, Reject it!',
-      customClass: {
-        popup: 'custom-swal', // Apply custom class to the popup
-      }
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
+    try {
         const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/logisticFuel/rejectFuelOrder/${selectedRequest._id}`);
 
-        Swal.fire ({
-          title: 'Success!',
-          text: 'Fuel order rejected successfully',
-          icon: 'success',
-          confirmButtonText: 'OK',
-          customClass: {
-            popup: 'custom-swal', // Apply custom class to the popup
-          }
-        });
+        setModalMessage('Request rejected successfully');
+        setIsSuccess(true);
+        setShowModal(true);
         // Optionally refresh the list
         fetchForwardedRequests();
 
     } catch (error) {
 
         console.error('Error rejecting request:', error);
-        Swal.fire ({
-          title: 'Error!',
-          text: 'Failed to reject fuel order',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          customClass: {
-            popup: 'custom-swal', // Apply custom class to the popup
-          }
-        });
+        setModalMessage('Failed to reject request');
+        setIsSuccess(false);
+        setShowModal(true);
 
     }
-  }
-});
+
 };
 
   //fetching signature
@@ -241,13 +184,10 @@ const handleRejectSubmit = async () => {
   if (!user) return <p>Loading...</p>;
 
   return (
-    <div className={`request ${selectedRequest ? 'dim-background' : ''}`}>
+    <div className={`verified-requist ${selectedRequest ? 'dim-background' : ''}`}>
 
-      <div className="order-navigation">
-        <div className="navigation-title">
-        <h2>Requisition from logistic office for fuel</h2>
-        </div>
-      
+      <div className="request-navigation">
+      <h2>Requisition from logistic office for fuel status</h2>
         <ul>
           {forwardedRequests.slice().reverse().map((request, index) => (
             <li key={index}>
@@ -267,11 +207,11 @@ const handleRejectSubmit = async () => {
               <form >
                 <h2>Edit Logistic Fuel Order</h2>
                 <div className="request-recieved-heading">
-            <h5>WESTERN PROVINCE</h5>
-            <h5>DISTRIC: NYABIHU</h5>
-            <h5>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h5>
-            <h5>DEPARTMENT:  LOGISTIC OFFICE</h5>
-            <h5>SUPPLIER NAME:</h5>
+            <h1>WESTERN PROVINCE</h1>
+            <h1>DISTRIC: NYABIHU</h1>
+            <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
+            <h1>DEPARTMENT:  LOGISTIC OFFICE</h1>
+            <h1>SUPPLIER NAME:</h1>
 
           </div>
                 <table>
@@ -331,7 +271,7 @@ const handleRejectSubmit = async () => {
             ) : (
               <>
                <div className="form-navigation">
-               <button className='approve-requisition' onClick={handleApproveSubmit}>Approve Order</button>
+               <button className='verify-requisition' onClick={handleApproveSubmit}>Approve Order</button>
                <button className='reject-request' onClick={handleRejectSubmit}>Reject Order</button>
                {/* <button className='edit-btn' onClick={handleEditClick}>Edit</button> */}
                <button></button>
@@ -343,15 +283,15 @@ const handleRejectSubmit = async () => {
           <div className='date-done'>
             <label htmlFor="">{new Date(selectedRequest.date).toDateString()}</label>
             </div>
-          <div className="fuel-order-heading">
-            <h5>WESTERN PROVINCE</h5>
-            <h5>DISTRIC: NYABIHU</h5>
-            <h5>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h5>
-            <h5>DEPARTMENT: LOGISTIC OFFICE </h5>
-            <h5>SUPPLIER NAME:{selectedRequest.supplierName}</h5>
+          <div className="request-recieved-heading">
+            <h1>WESTERN PROVINCE</h1>
+            <h1>DISTRIC: NYABIHU</h1>
+            <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
+            <h1>DEPARTMENT: LOGISTIC OFFICE </h1>
+            <h1>SUPPLIER NAME:{selectedRequest.supplierName}</h1>
           </div>
 
-            <h3>REQUISITON FORM OF LOGISTIC FOR FUEL</h3>
+            <h2>REQUISITON FORM OF LOGISTIC FOR FUEL</h2>
               
                 <table>
                   <thead>
@@ -381,8 +321,7 @@ const handleRejectSubmit = async () => {
                   <h3>Logistic Office</h3>
                   <label>Prepared By:</label>
                   <span>{selectedRequest.hodName || ''}</span><br />
-                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" 
-                  className='signature-img' />
+                  <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
                 
                     
                    
@@ -398,7 +337,26 @@ const handleRejectSubmit = async () => {
           </div>
         </div>
       )}
-     
+       {/* Modal pop message on success or error message */}
+       {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {isSuccess ? (
+              <div className="modal-success">
+                <FaCheckCircle size={54} color="green" />
+                <p>{modalMessage}</p>
+              </div>
+            ) : (
+              <div className="modal-error">
+                <FaTimesCircle size={54} color="red" />
+                <p>{modalMessage}</p>
+              </div>
+            )}
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
  
     </div>
   );

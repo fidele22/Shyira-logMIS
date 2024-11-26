@@ -10,7 +10,7 @@ import FuelOrder from './OrderSupply/fuelorder'
 import OrderStatus from './OrderSupply/orderstatus'
 import ReceivedOrder from './OrderSupply/RecievedOrder'
 import ViewCars from './fuelRequisition/viewcars'
-import LogisticProfile from '../UserProfile/profile'
+import LogisticProfile from './LogisticProfile'
 import StockReport from './StockReport/ItemReport';
 import ViewRequisition from './UserRequisitions/RequisitionsPages';
 import ViewFuelRequest from './fuelRequisition/fuelRequisitionPages'
@@ -19,7 +19,6 @@ import FuelReport from './StockReport/FuelReport'
 //import ApprovedRequests from './Requests/approvedRequest';
 import RequisitionReceive from './receivedRequisitions/itemRequestReceived';
 import './contentCss/LogisticDashboard.css';
-import HelpCenter from '../helpcenter/helpcenter';
 
 const LogisticDashboard = () => {
   const [currentPage, setCurrentPage] = useState('overview');
@@ -56,13 +55,13 @@ const LogisticDashboard = () => {
         return <ViewCars />     
      
      
-      case 'user-profile':
+      case 'logistic-profile':
         return <LogisticProfile />;
       case 'view-requisition':
         return <ViewRequisition />;
 
-      case 'help-center':
-         return <HelpCenter />;
+      //case 'requisition-receive':
+      //  return <RequisitionReceive />;
       //  
       default:
         return <Overview />;
@@ -71,14 +70,14 @@ const LogisticDashboard = () => {
 
   return (
     <div className="daf-dashboards">
-    <Navigation setCurrentPage={setCurrentPage} />
+    <Navigation />
     <div className="content-navbar">
     <Navbar setCurrentPage={setCurrentPage} />
     </div>
   
 
     <div className="dafcontent-page">
-      <div className='logisticcontent'>
+      <div className='dafcontents'>
       {renderContent()}
       </div>
       <Footer />

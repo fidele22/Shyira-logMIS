@@ -5,13 +5,13 @@ import Navbar from './Navigationbar/Hodnavigationbar';
 import Overview from './Overview';
 import MakeRequest from './request/requisitionPages'
 import FuelRequestPages from './fuelRequest/fuelRequisitionPages'
-//import ViewFuelStatus  from './fuelRequest/viewApproved'
+import RepairRequest from './repairRequest/repairRequest'
+import ViewFuelStatus  from './fuelRequest/viewApproved'
 import RequestStatus from './requestStatus/requestStatus'
 import Items from './items/viewItems'
 import UserProfile from '../UserProfile/profile'
 import './hodDashboard.css';
-import Cardata from './cardata/cardata'
-import HelpCenter from '../helpcenter/helpcenter';
+import ViewItems from './request/ViewItems';
 
 
 const LogisticDashboard = () => {
@@ -27,16 +27,16 @@ const LogisticDashboard = () => {
         return<FuelRequestPages /> 
       case 'requisition-status':  
         return <RequestStatus />  
-    
+      case 'veiw-fuel-status':
+        return <ViewFuelStatus />
       case 'requisition':
           return <MakeRequest />;
+      case 'repair-request':
+        return <RepairRequest />    
 
-      case 'fill-cardata':
-         return <Cardata />    
       case 'user-profile':
           return <UserProfile />;
-      case 'help-center':
-          return <HelpCenter />
+
       default:
         return <Overview />;
     }
@@ -44,7 +44,7 @@ const LogisticDashboard = () => {
 
   return (
     <div className="daf-dashboards">
-      <Navigation setCurrentPage={setCurrentPage} />
+      <Navigation />
       <div className="content-navbar">
       <Navbar setCurrentPage={setCurrentPage} />
       </div>

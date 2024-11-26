@@ -6,8 +6,7 @@ import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useDropzone } from 'react-dropzone';
-import '../../logisticdashboard/contentCss/itemrequisition.css';
-
+//import './modelMessage.css'  // Import Dropzone for file attachment
 
 const ApprovedRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -24,6 +23,9 @@ const ApprovedRequests = () => {
   const [dafUsers, setDafUsers] = useState([]);
   const [dgUsers, setDgUsers] = useState([]);
 
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [modalMessage, setModalMessage] = useState(''); //
+  const [isSuccess, setIsSuccess] = useState(true);
 
   useEffect(() => {
     fetchApprovedRequests();
@@ -34,7 +36,7 @@ const ApprovedRequests = () => {
 
   const fetchLogisticUsers = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/logistic-users`);
+      const response = await axios.get('http://localhost:5000/api/users/logistic-users');
       setLogisticUsers(response.data);
     } catch (error) {
       console.error('Error fetching logistic users:', error);
@@ -43,7 +45,7 @@ const ApprovedRequests = () => {
 
   const fetchDafUsers = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/daf-users`);
+      const response = await axios.get('http://localhost:5000/api/users/daf-users');
       setDafUsers(response.data);
     } catch (error) {
       console.error('Error fetching daf users:', error);
@@ -51,7 +53,7 @@ const ApprovedRequests = () => {
   };
   const fetchDgUsers = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/DG-users`);
+      const response = await axios.get('http://localhost:5000/api/users/DG-users');
       setDgUsers(response.data);
     } catch (error) {
       console.error('Error fetching daf users:', error);
@@ -60,7 +62,7 @@ const ApprovedRequests = () => {
 
   const fetchApprovedRequests = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/LogisticRequest/approved-order`);
+      const response = await axios.get('http://localhost:5000/api/LogisticRequest/approved-order');
       setRequests(response.data);
       setFilteredRequests(response.data); 
     } catch (error) {
@@ -70,15 +72,15 @@ const ApprovedRequests = () => {
 
   const handleRequestClick = async (requestId) => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/LogisticRequest/approved/${requestId}`);
+      const response = await axios.get(`http://localhost:5000/api/LogisticRequest/approved/${requestId}`);
       setSelectedRequest(response.data);
       setApprovedRequests(response.data);
 
       // Fetch associated file attachments
-      const attachmentsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/LogisticRequest/attachments/${requestId}`);
+      const attachmentsResponse = await axios.get(`http://localhost:5000/api/LogisticRequest/attachments/${requestId}`);
       setFileAttachments(attachmentsResponse.data);
 
-      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/approve/${requestId}`, { clicked: true });
+      await axios.put(`http://localhost:5000/api/approve/${requestId}`, { clicked: true });
       fetchApprovedRequests();
     } catch (error) {
       console.error('Error fetching request details:', error);
@@ -111,12 +113,7 @@ const ApprovedRequests = () => {
     }
     
     try {
-         // Use html2canvas to capture the content of the div, including the image signatures
-    const canvas = await html2canvas(input, {
-      allowTaint: true,
-      useCORS: true, // This allows images from different origins to be included in the canvas
-    });
-  
+      const canvas = await html2canvas(input);
       const data = canvas.toDataURL('image/png');
 
       const pdf = new jsPDF();
@@ -127,7 +124,7 @@ const ApprovedRequests = () => {
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
       pdf.addImage(data, 'PNG', 10, 10, imgWidth, imgHeight);
-      pdf.save('logistic-item-requisition-form.pdf');
+      pdf.save('requisition-form.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
@@ -135,10 +132,9 @@ const ApprovedRequests = () => {
 
 
   return (
-    <div className="request">
-     
-      <form onSubmit={handleSearchRequest} >
-        <div className="search-form">
+    <div className="approved-requests-page">
+      <h2>Approved Order not signed as Recieved</h2>
+      <form onSubmit={handleSearchRequest} className="search-form">
         <div className='search-date'>
           <label htmlFor="">Search by date</label>
           <input
@@ -151,14 +147,9 @@ const ApprovedRequests = () => {
         </div>
         
         <button type="submit" className='search-btn'>Search</button>
-        </div>
-        
       </form>
 
-      <div className="order-navigation">
-        <div className="navigation-title">
-        <h2>Approved Order not signed as Recieved</h2>
-        </div>
+      <div className="approved-navigate-request">
         <ul>
           {filteredRequests.slice().reverse().map((request, index) => (
             <li key={index}>
@@ -173,10 +164,10 @@ const ApprovedRequests = () => {
       </div>
      
       {selectedRequest && (
-        <div className="request-details-overlay">
+        <div className="approved-request-overlay">
           <div className="form-navigation">
             <button className='request-dowload-btn' onClick={downloadPDF}>Download Pdf</button>
-            {/* <button className='reject-btn' >Reject</button>  */}
+            <button className='mark-received-btn' >Reject</button> 
             <label className='request-close-btn' onClick={() => setSelectedRequest(null)}><FaTimes /></label>
           </div>  
           
@@ -215,17 +206,15 @@ const ApprovedRequests = () => {
                   ))}
                 </tbody>
               </table>
-              <div className="signature-section">
+              <div className="approved-signature-section">
                 <div className='logistic-signature'>
-                
+                  <h3>Logistic Office:</h3>
+                  <label htmlFor="">Prepared By:</label>
                   {logisticUsers.map(user => (
-                    <div key={user._id} className="logistic-signature">
-                        <h4>Logistic Office:</h4>
-                        <label htmlFor="">Prepared By:</label>
+                    <div key={user._id} className="logistic-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`}
-                        className='signature-img' />
+                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -234,15 +223,13 @@ const ApprovedRequests = () => {
                 </div>
 
                 <div className='daf-signature'>
-               
+                  <h3>DAF Office:</h3>
+                  <label htmlFor="">Verified By:</label>
                   {dafUsers.map(user => (
-                    <div key={user._id} className="daf-signature">
-                         <h4>DAF Office:</h4>
-                         <label htmlFor="">Verified By:</label>
+                    <div key={user._id} className="daf-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
-                        className='signature-img'/>
+                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -250,30 +237,63 @@ const ApprovedRequests = () => {
                   ))}
                 </div>
                 <div className='daf-signature'>
-               
+                  <h3>DG Office:</h3>
+                  <label htmlFor="">Approved By:</label>
                   {dgUsers.map(user => (
-                    <div key={user._id} className="daf-signature">
-                         <h4>DG Office:</h4>
-                         <label htmlFor="">Approved By:</label>
+                    <div key={user._id} className="daf-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
-                        className='signature-img'/>
+                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
                     </div>
                   ))}
                 </div>
+
+                {/* File Attachment Section 
+                <div className="file-attachments">
+                  <h3>File Attachments:</h3>
+                  <div {...getRootProps({ className: 'dropzone' })}>
+                    <input {...getInputProps()} />
+                    <p>Drag 'n' drop some files here, or click to select files</p>
+                  </div>
+                  <ul>
+                    {fileAttachments.map((file, index) => (
+                      <li key={index}>
+                        <a href={`http://localhost:5000/${file.path}`} target="_blank" rel="noopener noreferrer">
+                          {file.originalname}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                */}
               </div>
-              <div className='footer-img'>
-         <img src="/image/footerimg.png" alt="Logo" className="logo" />
-        </div>
             </div> 
           </div> 
         </div> 
       )}
-   
+       {/* Modal pop message on success or error message */}
+       {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {isSuccess ? (
+              <div className="modal-success">
+                <FaCheckCircle size={54} color="green" />
+                <p>{modalMessage}</p>
+              </div>
+            ) : (
+              <div className="modal-error">
+                <FaTimesCircle size={54} color="red" />
+                <p>{modalMessage}</p>
+              </div>
+            )}
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

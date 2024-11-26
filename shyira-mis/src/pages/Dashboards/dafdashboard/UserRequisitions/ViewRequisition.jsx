@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { FaQuestionCircle, FaEdit, FaTimes, FaTrash,FaCheck } from 'react-icons/fa';
+import { FaQuestionCircle,FaTimesCircle, FaEdit, FaCheckCircle,FaTimes, FaTrash,FaCheck } from 'react-icons/fa';
 import axios from 'axios';
-import './styling.css'; // Import CSS for styling
+import './ViewRequest.css'; // Import CSS for styling
 
 
 const ForwardedRequests = () => {
   const [requests, setRequests] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
   const [forwardedRequests, setForwardedRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [logisticUsers, setLogisticUsers] = useState([]);
-  const [filteredRequests, setFilteredRequests] = useState([]);
-  const [searchParams, setSearchParams] = useState({
-    department: '',
-    date: ''
-  });
 
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [modalMessage, setModalMessage] = useState(''); //
+  const [isSuccess, setIsSuccess] = useState(true);
+
+    // Search parameters state
+    const [searchParams, setSearchParams] = useState({
+      department: '',
+      date: ''
+    });
+  
 
   useEffect(() => {
     fetchForwardedRequests();
     fetchLogisticUsers(); // Fetch logistic users on component mount
   }, []);
-
   const fetchLogisticUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users/logistic-users');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/logistic-users`);
       setLogisticUsers(response.data);
     } catch (error) {
       console.error('Error fetching logistic users:', error);
@@ -34,9 +39,8 @@ const ForwardedRequests = () => {
 
   const fetchForwardedRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/LogisticRequest/verified');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/forwardedrequests/items`);
       setForwardedRequests(response.data);
-      setFilteredRequests(response.data);
     } catch (error) {
       console.error('Error fetching forwarded requests:', error);
     }
@@ -81,16 +85,24 @@ const ForwardedRequests = () => {
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`http://localhost:5000/api/LogisticRequest/update-verified/${selectedRequest._id}`, formData);
+      const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/forwardedrequests/${selectedRequest._id}`, formData);
       setSelectedRequest(response.data);
       setIsEditing(false);
       setForwardedRequests(prevRequests =>
         prevRequests.map(req => (req._id === response.data._id ? response.data : req))
       );
-    alert('requisition updated successful')
-   
+
+      // Forward the updated request to the approved collection
+     // await axios.post(`http://localhost:5000/api/forwardedrequests/approved/${selectedRequest._id}`);
+     
+      setModalMessage('requistion updated successfully');
+      setIsSuccess(true); // Set the success state
+      setShowModal(true); // Show the modal
     } catch (error) {
       console.error('Error updating request:', error);
+      setModalMessage('Failed to update requisition');
+      setIsSuccess(false); // Set the success state
+      setShowModal(true); // Show the modal
     }
   };
 
@@ -98,14 +110,20 @@ const ForwardedRequests = () => {
  const handleApproveSubmit = async (e) => {
   e.preventDefault();
   try {
-       // Forward the updated request to the approved collection
-       const response = await axios.post(`http://localhost:5000/api/LogisticRequest/approved/${selectedRequest._id}`);
-       setSelectedRequest(response.data);
-       alert('requestion Approved successfully')
+    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/forwardedrequests/approved/${selectedRequest._id}`);
+     
+    setModalMessage('requistion Approved successfully');
+    setIsSuccess(true); // Set the success state
+    setShowModal(true); // Show the modal
+    fetchForwardedRequests('')
   } catch (error) {
-    console.error('Error for approving request:', error);  
+    console.error('Error updating request:', error);
+    setModalMessage('Failed to Approve requisition');
+    setIsSuccess(false); // Set the success state
+    setShowModal(true); // Show the modal
   }
-} 
+};
+
 //fetching signature
 const [error, setError] = useState(null);
 const [user, setUser] = useState(null);
@@ -130,7 +148,7 @@ useEffect(() => {
       }
 
       // Use Axios to fetch user profile
-      const response = await axios.get('http://localhost:5000/api/users/profile', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -147,69 +165,83 @@ useEffect(() => {
 }, []);
 
 
-  // handle search logic to filter requistion by date or department
-  const handleSearchChange = (e) => {
-    const { name, value } = e.target;
-    setSearchParams({
-      ...searchParams,
-      [name]: value
-    });
-  };
+//search logic
 
-  const handleSearchRequest = (e) => {
-    e.preventDefault();
-    const { department, date } = searchParams;
-    const filtered = requests.filter(request => {
-      return (!department || request.department.toLowerCase().includes(department.toLowerCase())) &&
-             (!date || new Date(request.date).toDateString() === new Date(date).toDateString());
-    });
-    setFilteredRequests(filtered);
-  };
+const handleSearchChange = (e) => {
+  const { name, value } = e.target;
+  setSearchParams({
+    ...searchParams,
+    [name]: value
+  });
+};
+
+const handleSearchSubmit = (e) => {
+  e.preventDefault();
+  const { department, date } = searchParams;
+  const filtered = requests.filter(request => {
+    return (!department || request.department.toLowerCase().includes(department.toLowerCase())) &&
+           (!date || new Date(request.date).toDateString() === new Date(date).toDateString());
+  });
+  setFilteredRequests(filtered);
+};
+
   if (!user) return <p>Loading...</p>;
 
   return (
     <div className={`verified-requist ${selectedRequest ? 'dim-background' : ''}`}>
-    
+       
       <div className="verified-request-navigation">
-      <h4>List of logistic Order Verified Not Approved</h4>
-      <form onSubmit={handleSearchRequest} className="search-form">
+      <h2>User's Requisition for Items Verified</h2>
+      <form onSubmit={handleSearchSubmit} className="search-form">
+       <div className='search-department'>
+        <label htmlFor="">Search by department</label>
+       <input
+          type="text"
+          name="department"
+          placeholder="Search by department"
+          value={searchParams.department}
+          onChange={handleSearchChange}
+        />
+       </div>
+      
         <div className='search-date'>
-          <label htmlFor="">Search by date</label>
-          <input
-            type="date"
-            name="date"
-            placeholder="Search by date"
-            value={searchParams.date}
-            onChange={handleSearchChange}
-          />
+        <label htmlFor="">Search by date</label>
+        <input
+          type="date"
+          name="date"
+          placeholder="Search by date"
+          value={searchParams.date}
+          onChange={handleSearchChange}
+        />
         </div>
         
         <button type="submit" className='search-btn'>Search</button>
       </form>
-
+     
+      
         <ul>
-          {filteredRequests.slice().reverse().map((request, index) => (
+          {forwardedRequests.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
-          Requisition Form from <b>logistic</b> verified on {new Date(request.createdAt).toDateString()}
-         {/*<span>{!request.clicked ? 'New Request' : ''}</span> */} 
-         <label htmlFor=""><FaCheck /> Verified</label>
+          Requisition Form from department of <b>{request.department}</b> verified  on {new Date(request.updatedAt).toDateString()}
+          <span>{!request.clicked ? 'New Request' : ''}</span> <label htmlFor=""><FaCheck /> Verified</label>
         </p>
             </li>
           ))}
         </ul>
       </div>
+      
       {selectedRequest && (
         <div className="request-details-overlay">
           <div className="request-details">
             {isEditing ? (
               <form >
-                <h2>Edit Request</h2>
+                <h1>Edit Request</h1>
                 <div className="request-recieved-heading">
             <h1>WESTERN PROVINCE</h1>
             <h1>DISTRIC: NYABIHU</h1>
             <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
-            <h1>DEPARTMENT:  LOGISTIC OFFICE</h1>
+            <h1>DEPARTMENT: <span>{selectedRequest.department}</span>  </h1>
 
           </div>
                 <table>
@@ -218,9 +250,8 @@ useEffect(() => {
                       <th>No</th>
                       <th>Item Name</th>
                       <th>Quantity Requested</th>
-                      <th>Price</th> 
-                      
-                      <th>Total Amount</th>
+                      <th>Quantity Received</th>
+                      <th>Observation</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -232,7 +263,7 @@ useEffect(() => {
                             type="text"
                             name="itemName"
                             value={item.itemName}
-                         
+                            onChange={(e) => handleItemChange(idx, e)}
                           />
                         </td>
                         <td>
@@ -240,22 +271,22 @@ useEffect(() => {
                             type="number"
                             name="quantityRequested"
                             value={item.quantityRequested}
-                        
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            name="price"
-                            value={item.price}
                             onChange={(e) => handleItemChange(idx, e)}
                           />
                         </td>
                         <td>
                           <input
                             type="number"
-                            name="totalAmount"
-                            value={item.totalAmount}
+                            name="quantityReceived"
+                            value={item.quantityReceived}
+                            onChange={(e) => handleItemChange(idx, e)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            name="observation"
+                            value={item.observation}
                             onChange={(e) => handleItemChange(idx, e)}
                           />
                         </td>
@@ -264,7 +295,7 @@ useEffect(() => {
                   </tbody>
                 </table>
                 
-                <button className='approve-request-btn' onClick={handleUpdateSubmit}>Update Request</button>
+                <button className='submit-an-update' onClick={handleUpdateSubmit}>update</button>
                 <button type="button" className='cancel-btn' onClick={handleCancelClick}>Cancel</button>
               </form>
             ) : (
@@ -272,7 +303,6 @@ useEffect(() => {
                <div className="form-navigation">
                <button className='approve-request-btn' onClick={handleApproveSubmit}>Approve Request</button>
                <button className='edit-btn' onClick={handleEditClick}>Edit</button>
-               <button className='reject-btn'>Reject</button>
                <button></button>
              <label className='request-close-btn' onClick={() => setSelectedRequest(null)}><FaTimes /></label>
           </div>
@@ -283,12 +313,12 @@ useEffect(() => {
             <h1>WESTERN PROVINCE</h1>
             <h1>DISTRIC: NYABIHU</h1>
             <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
-            <h1>DEPARTMENT: LOGISTIC OFFICE </h1>
-            <h1>SUPPLIER NAME:{forwardedRequests.supplierName}</h1>
+            <h1>DEPARTMENT: <span>{selectedRequest.department}</span>  </h1>
+           
 
           </div>
 
-            <h2>REQUISITON FORM OF LOGISTIC</h2>
+            <h2>REQUISITON FORM</h2>
               
                 <table>
                   <thead>
@@ -296,8 +326,8 @@ useEffect(() => {
                       <th>No</th>
                       <th>Item Name</th>
                       <th>Quantity Requested</th>
-                      <th>Price</th>
-                      <th>Total Amount</th>
+                      <th>Quantity Received</th>
+                      <th>Observation</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -306,37 +336,62 @@ useEffect(() => {
                         <td>{idx + 1}</td>
                         <td>{item.itemName}</td>
                         <td>{item.quantityRequested}</td>
-                        <td>{item.price}</td>
-                        <td>{item.totalAmount}</td>
+                        <td>{item.quantityReceived}</td>
+                        <td>{item.observation}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+ {/* Modal pop message on success or error message */}
+ {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {isSuccess ? (
+              <div className="modal-success">
+                <FaCheckCircle size={54} color="green" />
+                <p>{modalMessage}</p>
+              </div>
+            ) : (
+              <div className="modal-error">
+                <FaTimesCircle size={54} color="red" />
+                <p>{modalMessage}</p>
+              </div>
+            )}
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
                 <div className="daf-signature-section">
+                <div className="hod-signature">
+                  <h3 htmlFor="hodName">Name of HOD:</h3>
+                  <label htmlFor="">Prepared By:</label>
+                     <p >{selectedRequest.hodName}</p>
+              
+                    {selectedRequest.hodSignature ? (
+                      <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+                    ) : (
+                      <p>No HOD signature available</p>
+                    )}
+
+                  </div>
                   <div className='logistic-signature'>
                   <h3>Logistic Office:</h3>
-                  <label htmlFor="">Prepared By:</label>
+                  <label htmlFor="">verified By:</label>
                     {logisticUsers.map(user => (
                       <div key={user._id} className="logistic-user">
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                          <img src={`http://localhost:5000/${user.signature}`}  />
                         ) : (
                           <p>No signature available</p>
                         )}
                       </div>
                     ))}
                   </div>
-                 <div className="daf-signature">
-                    <h3>DAF Office:</h3>
-                    <label htmlFor="">verified By</label>
-                  <p>{user.firstName} {user.lastName}</p>
-                  {user.signature && <img src={`http://localhost:5000/${user.signature}`} alt="Signature" />}
-                  </div>
-                  
+                 
                 </div>
-              
+             
                 
 
 
@@ -345,8 +400,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-  
     </div>
   );
 };

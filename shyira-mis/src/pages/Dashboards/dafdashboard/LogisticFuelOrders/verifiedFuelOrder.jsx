@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaQuestionCircle, FaEdit, FaTimes,FaCheckCircle, FaTimesCircle,FaTrash,FaCheck } from 'react-icons/fa';
 import axios from 'axios';
-import Swal from 'sweetalert2'; 
+
 //import './ViewRequest.css'; // Import CSS for styling
 
 
@@ -12,6 +12,9 @@ const ForwardedRequests = () => {
   const [formData, setFormData] = useState({});
   const [logisticUsers, setLogisticUsers] = useState([]);
 
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [modalMessage, setModalMessage] = useState(''); //
+  const [isSuccess, setIsSuccess] = useState(true);
 
 
   useEffect(() => {
@@ -82,15 +85,7 @@ const ForwardedRequests = () => {
       setForwardedRequests(prevRequests =>
         prevRequests.map(req => (req._id === response.data._id ? response.data : req))
       );
-      Swal.fire ({
-        title: 'Success!',
-        text: 'Requisition Updated successfully',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
+    alert('requisition updated successful')
    
     } catch (error) {
       console.error('Error updating request:', error);
@@ -104,29 +99,18 @@ const ForwardedRequests = () => {
        // Forward the updated request to the approved collection
        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/logisticFuel/verified/${selectedRequest._id}`);
        setSelectedRequest(response.data);
-       Swal.fire ({
-        title: 'Success!',
-        text: 'logistic requisition verified successfully',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
+    
+       setModalMessage('logistic requestion verified successfully');
+       setIsSuccess(true); // Set the success state
+       setShowModal(true); // Show the modal
 
          // Optionally refresh the list
     fetchForwardedRequests();
   } catch (error) {
     console.error('Error for approving request:', error);  
-    Swal.fire ({
-      title: 'Error!',
-      text: 'Error for verifying logistic requisition',
-      icon: 'error',
-      confirmButtonText: 'OK',
-      customClass: {
-        popup: 'custom-swal', // Apply custom class to the popup
-      }
-    });
+    setModalMessage('Failed to verify requisition');
+    setIsSuccess(false); // Set the success state
+    setShowModal(true); // Show the modal
   }
 } 
   //fetching signature
@@ -310,8 +294,7 @@ const ForwardedRequests = () => {
                   <h3>Logistic Office</h3>
                   <label>Prepared By:</label>
                   <span>{selectedRequest.hodName || ''}</span><br />
-                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" 
-                  className='signature-img' />
+                  <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
                 
                     
                    
@@ -327,7 +310,26 @@ const ForwardedRequests = () => {
           </div>
         </div>
       )}
-     
+       {/* Modal pop message on success or error message */}
+       {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {isSuccess ? (
+              <div className="modal-success">
+                <FaCheckCircle size={54} color="green" />
+                <p>{modalMessage}</p>
+              </div>
+            ) : (
+              <div className="modal-error">
+                <FaTimesCircle size={54} color="red" />
+                <p>{modalMessage}</p>
+              </div>
+            )}
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
  
     </div>
   );

@@ -1,24 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import SearchableDropdown from '../../logisticdashboard/OrderSupply/searchable';
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import { FaQuestionCircle, FaEdit,FaTimes, FaTimesCircle, FaCheck,
+  FaCheckCircle, FaCheckDouble, FaCheckSquare } from 'react-icons/fa';
+import SearchableDropdown from '../../logisticdashboard/OrderSupply/searchable'
 import './makeRequist.css'; // Import CSS for styling
 
-const UserRequestForm = () => {
+const LogisticRequestForm = () => {
   const [items, setItems] = useState([]);
   const [department, setDepartment] = useState('');
   const [date, setDate] = useState('');
   const [stockQuantities, setStockQuantities] = useState({});
   const [itemOptions, setItemOptions] = useState([]);
-  const [user, setUser ] = useState(null);
+  const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+
+  const [showModal, setShowModal] = useState(false); // State for modal visibility
+  const [modalMessage, setModalMessage] = useState(''); //
+  const [isSuccess, setIsSuccess] = useState(true);
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/stocks`);
         setItemOptions(response.data);
+        // Set stock quantities from the response
         const quantities = response.data.reduce((acc, item) => {
           acc[item._id] = item.quantity; // Assuming the response includes 'quantity' field
           return acc;
@@ -31,19 +36,16 @@ const UserRequestForm = () => {
   
     fetchItems();
   }, []);
+  
 
+  
+  //validate if you request number greater than quantity available in stock 
   const validateQuantities = () => {
     for (const item of items) {
       if (item.quantityRequested > (stockQuantities[item.itemId] || 0)) {
-        Swal.fire({
-          title: 'Error!',
-          text: 'Quantity Requested exceeds available Quantity in stock.',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          customClass: {
-            popup: 'custom-swal', // Apply custom class to the popup
-          }
-        });
+        setModalMessage('Quantity Requested  exceeds available Quantity stock.');
+        setIsSuccess(false);
+        setShowModal(true);
         return false;
       }
     }
@@ -53,6 +55,7 @@ const UserRequestForm = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
+        // Get the current tab's ID from sessionStorage
         const currentTab = sessionStorage.getItem('currentTab');
 
         if (!currentTab) {
@@ -60,19 +63,21 @@ const UserRequestForm = () => {
           return;
         }
 
+        // Retrieve the token using the current tab ID
         const token = sessionStorage.getItem(`token_${currentTab}`);
         if (!token) {
           setError('Token not found');
           return;
         }
 
+        // Use Axios to fetch user profile
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
 
-        setUser (response.data);
+        setUser(response.data);
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Invalid token or unable to fetch profile data');
@@ -85,75 +90,65 @@ const UserRequestForm = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!validateQuantities()) return; // Calling validation
+    if (!validateQuantities()) return; //calling validation
 
     const formData = new FormData();
-    formData.append('department', user ? `${user.departmentName} `: '',);
-    formData.append('service', user ? `${user.serviceName} `: '',);
+    formData.append('department', department);
     formData.append('items', JSON.stringify(items));
     formData.append('date', date);
     formData.append('hodName', user ? `${user.firstName} ${user.lastName}` : ''); // HOD Name
     formData.append('hodSignature', user && user.signature ? user.signature : ''); // HOD Signature URL
+   
 
     try {
-      const currentTab = sessionStorage.getItem('currentTab');
+       // Get the current tab's ID from sessionStorage
+       const currentTab = sessionStorage.getItem('currentTab');
 
-      if (!currentTab) {
-        setError('No tab ID found in sessionStorage');
-        return;
-      }
+       if (!currentTab) {
+         setError('No tab ID found in sessionStorage');
+         return;
+       }
 
-      const token = sessionStorage.getItem(`token_${currentTab}`);
-      if (!token) {
-        setError('Token not found');
-        return;
-      }
+       // Retrieve the token using the current tab ID
+       const token = sessionStorage.getItem(`token_${currentTab}`);
+       if (!token) {
+         setError('Token not found');
+         return;
+       }
 
       const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/submit`, {
-        department:user ? `${user.departmentName} `: '',
-        service:user ? `${user.serviceName} `: '',
+        department,
         items: JSON.stringify(items),
         date,
         hodName: user ? `${user.firstName} ${user.lastName}` : '',
         hodSignature: user && user.signature ? user.signature : ''
       }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+         'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json' // Ensure content type is JSON
         },
       });
-
+  
       console.log(response.data);
 
-      // Show success message using SweetAlert2
-      Swal.fire ({
-        title: 'Success!',
-        text: 'Submit requisition to logistic successfully',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
-
+      setModalMessage('Submit requisition to logistic successfully');
+      setIsSuccess(true); // Set the success state
+      setShowModal(true); // Show the modal
       // Clear form fields after successful submission
+
       setDepartment(''); // Reset department field
+
       setDate(''); // Reset date field
+  
       setItems([]); // Reset items array
       
     } catch (error) {
       console.error('Error submitting requisition:', error);
       
-      // Show error message using SweetAlert2
-      Swal.fire({
-        title: 'Error!',
-        text: 'Failed to submit requisition',
-        icon: 'error',
-        confirmButtonText: 'OK',
-        customClass: {
-          popup: 'custom-swal', // Apply custom class to the popup
-        }
-      });
+      setModalMessage('Failed to submit requisition');
+      setIsSuccess(false); // Set the success state
+      setShowModal(true); // Show the modal
+   // Refresh the list after posting
     }
   };
 
@@ -180,6 +175,7 @@ const UserRequestForm = () => {
     const updatedItems = [...items];
     
     if (key === 'itemName') {
+      // Find the selected item from the options
       const selectedItem = itemOptions.find(item => item.name === value);
       
       if (selectedItem) {
@@ -192,26 +188,31 @@ const UserRequestForm = () => {
   
     setItems(updatedItems);
   };
+  
+  const handleFileChange = (event, setFile) => {
+    const file = event.target.files[0];
+    setFile(file);
+  };
 
   return (
     <div className="requistion">
       <h3>Make Requisition for Items</h3>
-      <label>You have to make various requisitions for staff and accommodation materials</label>
+      <label htmlFor="" >You have to make various requisitions for staff and accommodation materials</label>
       <div className="hod-request-form">
         <form onSubmit={handleSubmit}>
           <div className="image-logo">
-            <img src="/image/logo2.png" alt="Logo" className="logo" />
+            <img src="/image/logo.png" alt="Logo" className="logo" />
           </div>
           <div className="date-field">
-            <label htmlFor="date">Date:</label>
-            <input
-              type="date"
-              id="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </div>
+              <label htmlFor="date">Date:</label>
+              <input
+                type="date"
+                id="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
           <div className="heading-title">
             <div className="title">
               <h4>WESTERN PROVINCE</h4>
@@ -220,15 +221,20 @@ const UserRequestForm = () => {
               <h4>DISTRICT: NYABIHU</h4>
             </div>
             <div className="title">
-              <h4>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h4>
+              <h4>HEALTH FACILITY : SHYIRA DISTRICT HOSPITAL</h4>
             </div>
             <div className="title">
-            <h4>DEPARTMENT: {user && user.departmentName ? user.departmentName : "Loading..."}</h4>
+              <h4>DEPARTMENT :</h4>
+              <input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="Type here..."
+                required
+              />
             </div>
-            <div className="title">
-            <h4>SERVICE: {user && user.serviceName ? user.serviceName : "Loading..."}</h4>
-            </div>
-
+           
+            
           </div>
 
           <h3>REQUISITION FORM</h3>
@@ -267,29 +273,52 @@ const UserRequestForm = () => {
                     <input
                       type="number"
                       value={item.quantityReceived}
+                    
                     />
                   </td>
                   <td>
                     <input
                       type="text"
                       value={item.observation}
+                   
                     />
                   </td>
                   <td>
                     <button className='remove-btn' type="button" onClick={() => handleRemoveItem(index)}>Remove</button>
                   </td>
                 </tr>
- ))}
+              ))}
             </tbody>
           </table>
+ {/* Modal pop message on success or error message */}
+ {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {isSuccess ? (
+              <div className="modal-success">
+                <FaCheckCircle size={54} color="green" />
+                <p>{modalMessage}</p>
+              </div>
+            ) : (
+              <div className="modal-error">
+                <FaTimesCircle size={54} color="red" />
+                <p>{modalMessage}</p>
+              </div>
+            )}
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
           <div>
+           
             {user ? (
               <>
-               <label htmlFor="hodName">Name of head of {user.departmentName}</label>
+               <label htmlFor="hodName">Name of {user.positionName}</label>
                 <p>{user.firstName} {user.lastName}</p>
+               
                 {user.signature ? (
-                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="Signature" />
+                  <img src={`http://localhost:5000/${user.signature}`} alt="Signature" />
                 ) : (
                   <p>No signature available</p>
                 )}
@@ -298,9 +327,9 @@ const UserRequestForm = () => {
               <p>Loading user profile...</p>
             )}
           </div>
-         <div className='footer-img'>
-         <img src="/image/footerimg.png" alt="Logo" className="footerimg" />
-         </div>
+
+         
+
           <button className='hod-submit-btn' type="submit">Send Request</button>
         </form>
       </div>
@@ -308,4 +337,4 @@ const UserRequestForm = () => {
   );
 };
 
-export default UserRequestForm;
+export default LogisticRequestForm;
