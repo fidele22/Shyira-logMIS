@@ -118,24 +118,28 @@ const ApprovedRequests = () => {
     console.error('Element with ID pdf-content not found');
     return;
   }
-  
-  try {
-    const canvas = await html2canvas(input);
-    const data = canvas.toDataURL('image/png');
 
-    const pdf = new jsPDF();
+  try {
+    // Use html2canvas to capture the content of the div, including the image signatures
+    const canvas = await html2canvas(input, {
+      allowTaint: true,
+      useCORS: true, // This allows images from different origins to be included in the canvas
+    });
+
+    const data = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
     const imgProps = pdf.getImageProperties(data);
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pdfWidth - 20; // Subtract the margin from the width
-    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    pdf.addImage(data, 'PNG', 10, 10, imgWidth, imgHeight); // 10 is the margin
+    // Add the image content into the PDF and download
+    pdf.addImage(data, 'PNG', 10, 10, pdfWidth - 20, pdfHeight); // Adjust the margins if needed
     pdf.save('requisition-form.pdf');
   } catch (error) {
     console.error('Error generating PDF:', error);
   }
 };
+
 if (loading) return <p>Loading...</p>;
 if (error) return <p>{error}</p>;
 
@@ -145,7 +149,8 @@ if (error) return <p>{error}</p>;
 
       <div className="approved-navigate-request">
       <h4>Requisition for items have been signed that was recieved</h4>
-      <form onSubmit={handleSearchRequest} className="search-form">
+      <form onSubmit={handleSearchRequest} >
+        <div className="search-form">
         <div className='search-date'>
         <label htmlFor="">Search by date</label>
         <input
@@ -158,6 +163,8 @@ if (error) return <p>{error}</p>;
         </div>
         
         <button type="submit" className='search-btn'>Search</button>
+        </div>
+        
       </form>
         <ul>
           {filteredRequests.slice().reverse().map((request, index) => (
@@ -213,25 +220,28 @@ if (error) return <p>{error}</p>;
              ))}
            </tbody>
          </table>
-         <div className="approved-signature-section">
+         <div className="signature-section">
            <div >
              <h3>HOD Name:</h3>
              <label>prepared By:</label> 
             <p>{selectedRequest.hodName}</p>
              {selectedRequest.hodSignature ? (
-               <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+               <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" 
+               className='signature-img'/>
              ) : (
                <p>No HOD signature available</p>
              )}
            </div>
            <div className='logistic-signature'>
-                  <h3>Logistic Office:</h3>
-                  <label htmlFor="">Verified By:</label>
+                 
                     {logisticUsers.map(user => (
-                      <div key={user._id} className="logistic-user">
+                      <div key={user._id} className="logistic-signature">
+                         <h3>Logistic Office:</h3>
+                         <label htmlFor="">Verified By:</label>
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
+                          className='signature-img'/>
                         ) : (
                           <p>No signature available</p>
                         )}
@@ -239,13 +249,15 @@ if (error) return <p>{error}</p>;
                     ))}
                   </div>
          <div className="daf-signature">
-         <h3>DAF:</h3>
-         <label htmlFor="">Approved By:</label>
+         
          {dafUsers.map(user => (
-                      <div key={user._id} className="logistic-user">
+                      <div key={user._id} className="daf-signature">
+                        <h3>DAF:</h3>
+                        <label htmlFor="">Approved By:</label>
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} 
+                          className='signature-img' />
                         ) : (
                           <p>No signature available</p>
                         )}
@@ -258,7 +270,8 @@ if (error) return <p>{error}</p>;
              <label>Recieved By:</label> 
             <p>{selectedRequest.hodName}</p>
              {selectedRequest.hodSignature ? (
-               <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+               <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" 
+               className='signature-img' />
              ) : (
                <p>No HOD signature available</p>
              )}

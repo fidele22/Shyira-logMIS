@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { FaEye,FaTimes } from 'react-icons/fa';
 import axios from 'axios';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const FuelRequisitionForm = () => {
   const [requisitions, setRequisitions] = useState([]);
@@ -10,6 +12,10 @@ const FuelRequisitionForm = () => {
   const [quantityReceived, setQuantityReceived] = useState('');
   const [logisticUsers, setLogisticUsers] = useState([]);
   const [dafUsers, setDafUsers] = useState([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15); // Set items per page
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchLogisticUsers = async () => {
@@ -24,9 +30,14 @@ const FuelRequisitionForm = () => {
   }, []);
 
   useEffect(() => {
+    // Update total pages when filteredRequests change
+    setTotalPages(Math.ceil(requisitions.length / itemsPerPage));
+  }, [requisitions, itemsPerPage]);
+
+  useEffect(() => {
     const fetchRequisitions = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/userfuelrequest/recievedfuel`);
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/userfuelrequest/get-recievedfuel`);
         setRequisitions(response.data);
         setLoading(false);
       } catch (error) {
@@ -64,7 +75,50 @@ const FuelRequisitionForm = () => {
   const handleCloseClick = () => {
     setSelectedRequest(null);
   };
+ // Pagination helpers
+ const indexOfLastItem = currentPage * itemsPerPage;
+ const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+ const currentItems = requisitions.slice(indexOfFirstItem, indexOfLastItem);
 
+ const nextPage = () => {
+   if (currentPage < totalPages) {
+     setCurrentPage(currentPage + 1);
+   }
+ };
+
+ const prevPage = () => {
+   if (currentPage > 1) {
+     setCurrentPage(currentPage - 1);
+   }
+ };
+ // Function to generate and download PDF
+ const downloadPDF = async () => {
+  const input = document.getElementById('pdf-content');
+  if (!input) {
+    console.error('Element with ID pdf-content not found');
+    return;
+  }
+
+  try {
+    // Use html2canvas to capture the content of the div, including the image signatures
+    const canvas = await html2canvas(input, {
+      allowTaint: true,
+      useCORS: true, // This allows images from different origins to be included in the canvas
+    });
+
+    const data = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgProps = pdf.getImageProperties(data);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    // Add the image content into the PDF and download
+    pdf.addImage(data, 'PNG', 10, 10, pdfWidth - 20, pdfHeight); // Adjust the margins if needed
+    pdf.save('fuel-user-requisition-form-recieved.pdf');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+  }
+};
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
@@ -72,25 +126,33 @@ const FuelRequisitionForm = () => {
     <div className="fuel-requisition-form">
       <h4>List of Fuel Requisition that has been Recieved</h4>
       <label htmlFor=""> Review requisition was recieved </label>
-      <div className="open-request">
+      <div className="order-navigation">
         <ul>
-          {requisitions.slice().reverse().map((request, index) => (
+          {currentItems.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
-                Requisition Form of Fuel requested by {request.hodName} done on {new Date(request.createdAt).toDateString()} recieved
+                Requisition Form of Fuel requested by {request.hodName} done on {new Date(request.createdAt).toDateString()} 
+                <span className='status-badge'>Recieved</span>
               </p>
             </li>
           ))}
                </ul>
+           <div className="pagination-buttons">
+          <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
+          <span>Page {currentPage} of {totalPages}</span>
+          <button onClick={nextPage} disabled={currentPage === totalPages}>Next</button>
+        </div>
       </div>
 
       {selectedRequest && (
         <div className="fuel-request-details-overlay">
           <div className="fixed-nav-bar">
+          <button className='request-dowload-btn' onClick={downloadPDF}>Download Pdf</button>
             <button type="button" className='close-btn' onClick={handleCloseClick}><FaTimes /></button>
           </div>
 
           <div className="fuel-request-details-content">
+            <div id='pdf-content'>
             <h3>Fuel Requisition Form</h3>
             <form>
               <div className="view-form-group">
@@ -131,7 +193,7 @@ const FuelRequisitionForm = () => {
                   {selectedRequest && selectedRequest.file ? (
                     <div className='file-uploaded'>
                       <label>Previous Destination file:</label>
-                      <a href={`http://localhost:5000/${selectedRequest.file}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.file}`} target="_blank" rel="noopener noreferrer">
                         <FaEye /> View File
                       </a>
                     </div>
@@ -146,7 +208,7 @@ const FuelRequisitionForm = () => {
                   <h5>Head Of department:</h5>
                   <label>Prepared By:</label>
                   <span>{selectedRequest.hodName || ''}</span>
-                  <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" />
                 </div>
                 <div className='logistic-signature'>
                   <h5>Logistic Office:</h5>
@@ -155,7 +217,7 @@ const FuelRequisitionForm = () => {
                     <div key={user._id} className="logistic-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -169,7 +231,7 @@ const FuelRequisitionForm = () => {
                     <div key={user._id} className="logistic-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -180,18 +242,21 @@ const FuelRequisitionForm = () => {
                   <h5>Head Of department:</h5>
                   <label>Prepared By:</label>
                   <span>{selectedRequest.hodName || ''}</span>
-                  <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" />
                 </div>
               </div>
               <div className="action-buttons">
             
               </div>
             </form>
+            
           </div>
              </div>
-       
+       </div>
       )}
+      
     </div>
+    
   );
 };
 

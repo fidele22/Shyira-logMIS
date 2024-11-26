@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaQuestionCircle, FaEdit,FaTimes, FaTimesCircle, FaCheck,
   FaCheckCircle, FaCheckDouble, FaCheckSquare } from 'react-icons/fa';
-import SearchableDropdown from './searchable'
+import Swal from 'sweetalert2'; 
 //import './makeRequist.css'; // Import CSS for styling
 
 const LogisticRequestForm = () => {
@@ -16,13 +16,6 @@ const LogisticRequestForm = () => {
   const [date, setDate] = useState('');
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
-
-
-  const [showModal, setShowModal] = useState(false); // State for modal visibility
-  const [modalMessage, setModalMessage] = useState(''); //
-  const [isSuccess, setIsSuccess] = useState(true);
-
-
   
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -43,7 +36,7 @@ const LogisticRequestForm = () => {
         }
 
         // Use Axios to fetch user profile
-        const response = await axios.get('http://localhost:5000/api/users/profile', {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -63,6 +56,7 @@ const LogisticRequestForm = () => {
     event.preventDefault();
   
     const payload = {
+      department,
       supplierName,
       items,  // Make sure to include items array here
       date,
@@ -71,7 +65,7 @@ const LogisticRequestForm = () => {
     };
   
     try {
-      const response = await axios.post('http://localhost:5000/api/logisticFuel/fuel-order', payload, {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/logisticFuel/fuel-order`, payload, {
         headers: {
           'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -79,9 +73,16 @@ const LogisticRequestForm = () => {
       });
   
       console.log(response.data);
-      setModalMessage('Submit requisition to logistic successfully');
-      setIsSuccess(true);
-      setShowModal(true);
+        // Show success message using SweetAlert2
+        Swal.fire ({
+          title: 'Success!',
+          text: 'Fuel order sent successfully',
+          icon: 'success',
+          confirmButtonText: 'OK',
+          customClass: {
+            popup: 'custom-swal', // Apply custom class to the popup
+          }
+        });
 
       // Clear the form fields after successful submission
 
@@ -94,9 +95,16 @@ const LogisticRequestForm = () => {
 
     } catch (error) {
       console.error('Error submitting requisition:', error);
-      setModalMessage('Failed to submit requisition');
-      setIsSuccess(false);
-      setShowModal(true);
+        // Show success message using SweetAlert2
+        Swal.fire ({
+          title: 'Error!',
+          text: 'Failed to submit fuel order',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          customClass: {
+            popup: 'custom-swal', // Apply custom class to the popup
+          }
+        });
     }
   };
   
@@ -245,34 +253,18 @@ const LogisticRequestForm = () => {
               ))}
             </tbody>
           </table>
-        {/* Modal pop message on success or error message */}
-       {showModal && (
-         <div className="modal-overlay">
-           <div className="modal-content">
-            {isSuccess ? (
-              <div className="modal-success">
-                <FaCheckCircle size={54} color="green" />
-                <p>{modalMessage}</p>
-              </div>
-            ) : (
-              <div className="modal-error">
-                <FaTimesCircle size={54} color="red" />
-                <p>{modalMessage}</p>
-              </div>
-            )}
-            <button onClick={() => setShowModal(false)}>Close</button>
-          </div>
-        </div>
-      )}
+     
 
-          <div className='sign'>
+          <div className='signature-signature'>
+            <div className="hod-signature">
             <label htmlFor="hodName">Prepared By:</label>
             {user ? (
               <>
                 <p>{user.firstName} {user.lastName}</p>
             
                 {user.signature ? (
-                  <img src={`http://localhost:5000/${user.signature}`} alt="Signature" />
+                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="Signature" 
+                  className='signature-img' />
                 ) : (
                   <p>No signature available</p>
                 )}
@@ -281,6 +273,8 @@ const LogisticRequestForm = () => {
               <p>Loading user profile...</p>
             )}
           </div>
+            </div>
+          
 
          
 

@@ -7,8 +7,15 @@
    margin: 10px 20px 0px 20px; 
    padding: 20px;
 }
+.pagination-controls{
+  padding: 20px;
+}
+.pagination-controls button{
+  background-color: #007bff;
+
+}
 .search-item-input input[type='text']{
-  width:25%;
+ width:25%;
  border-top: none;
  border-left: none;
  border-right: none;
@@ -69,7 +76,7 @@
     }
     .download-exl-btn{
       background-color: rgb(206, 156, 5);
-      font-size: 20px;
+      font-size: 14px;
       margin-left: 2%;
       margin-top:2% ;
     }
@@ -84,8 +91,8 @@
    
     }
     .download-history-btn{
-      background-color: green;
-      font-size: 20px;
+      background-color: rgb(207, 95, 87);
+      font-size: 14px;
     }
 /***********styling *stock history**********/
     .stockHistory-overlay{

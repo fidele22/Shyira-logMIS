@@ -2,6 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaEdit, FaTrash,FaTimes,FaPlus } from 'react-icons/fa';
 import axios from 'axios';
+import { jsPDF } from "jspdf";
+import "jspdf-autotable"; // Import the autotable plugin
+import html2canvas from 'html2canvas'; 
+import html2pdf from 'html2pdf.js';
+import * as XLSX from "xlsx";
 
 const FuelStockList = () => {
   const [fuelStocks, setFuelStocks] = useState([]);
@@ -14,9 +19,13 @@ const FuelStockList = () => {
     quantity: '',
     pricePerUnit: '',
   });
+  const [startDate, setStartDate] = useState('');
+ const [endDate, setEndDate] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(10); // Number of items per page
+  const [isFiltered, setIsFiltered] = useState(false); // New state to track if filter is applied
 
   useEffect(() => {
     fetchFuelStocks();
@@ -33,9 +42,16 @@ const FuelStockList = () => {
     }
   };
 
-  const fetchHistory = async (page, limit) => {
+  const fetchHistory = async (page, limit, startDate = '', endDate = '') => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/fuel/fuel-history?page=${page}&limit=${limit}`);
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/fuel/fuel-history`, {
+        params: {
+          page,
+          limit,
+          startDate,
+          endDate,
+        },
+      });
       setHistory(response.data.history);
       setTotalPages(Math.ceil(response.data.total / limit));
       setLoading(false);
@@ -45,6 +61,30 @@ const FuelStockList = () => {
       setLoading(false);
     }
   };
+ // New function to fetch all filtered history
+
+ const fetchFilteredData = async (startDate, endDate) => {
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/fuel/fuel-history`, {
+      params: {
+        startDate,
+        endDate,
+        fetchAll: true, // Skip pagination and fetch all data
+      },
+    });
+
+    if (response.data.history && response.data.history.length > 0) {
+      return response.data.history;
+    } else {
+      alert('No data available for the selected date range');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching filtered data:', error);
+    alert('Error fetching filtered data');
+    return [];
+  }
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,6 +118,137 @@ const FuelStockList = () => {
       setCurrentPage(currentPage - 1);
     }
   };
+
+
+  const downloadExcel = async () => {
+    // Fetch all filtered history
+    const allFilteredHistory = await fetchFilteredData(startDate, endDate);
+    
+    if (allFilteredHistory.length === 0) {
+      alert('No data available for the selected date range');
+      return;
+    }
+  
+    // Transform the data into a flat structure
+    const transformedData = allFilteredHistory.map(record => ({
+      lastUpdated: new Date(record.updatedAt).toLocaleString(), // Format date as needed
+      carplaque: record.carplaque,
+      entryQuantity: record.entry.quantity,
+      entryPricePerUnit: record.entry.pricePerUnit,
+      entryTotalAmount: record.entry.totalAmount,
+      exitQuantity: record.exit.quantity,
+      exitPricePerUnit: record.exit.pricePerUnit,
+      exitTotalAmount: record.exit.totalAmount,
+      balanceQuantity: record.balance.quantity,
+      balancePricePerUnit: record.balance.pricePerUnit,
+      balanceTotalAmount: record.balance.totalAmount,
+    }));
+  
+    // Create a new workbook
+    const workbook = XLSX.utils.book_new();
+    // Create the title rows
+
+    const titleRows = [
+
+      ["REPUBLIC OF RWANDA"],
+  
+      ["NYABIHU DISTRICT"],
+  
+      ["SHYIRA DISTRICT HOSPITAL"],
+  
+      ["BP S6 MUSANZE"],
+  
+      [""], // Empty row for spacing
+  
+      ["Store Card for Fuel cards"],
+  
+      [""], // Empty row for spacing
+  
+    ];
+  
+    // Create the header rows
+    const headerRow1 = [
+      "Last Updated", 
+      "Car Plaque", 
+      "Entry ", 
+      "", 
+      "", 
+      "Exit", 
+      "", 
+      "", 
+      "Balance", 
+      "", 
+      ""
+    ];
+  
+    const headerRow2 = [
+      "", // Placeholder for Last Updated
+      "", // Placeholder for Car Plaque
+      "Quantity", 
+      "Price Per Unit", 
+      "Total Amount", 
+      "Quantity", 
+      "Price Per Unit", 
+      "Total Amount", 
+      "Quantity", 
+      "Price Per Unit", 
+      "Total Amount"
+    ];
+  
+    // Create a worksheet with the headers
+    const worksheetData = [ ...titleRows,headerRow1, headerRow2, ...transformedData.map(record => [
+      record.lastUpdated,
+      record.carplaque,
+      record.entryQuantity,
+      record.entryPricePerUnit,
+      record.entryTotalAmount,
+      record.exitQuantity,
+      record.exitPricePerUnit,
+      record.exitTotalAmount,
+      record.balanceQuantity,
+      record.balancePricePerUnit,
+      record.balanceTotalAmount,
+    ])];
+  
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  
+    // Set the column widths for better readability
+    worksheet['!cols'] = [
+      { wpx: 120 }, // Last Updated
+      { wpx: 100 }, // Car Plaque
+      { wpx: 80 },  // Entry Quantity
+      { wpx: 80 },  // Entry Price Per Unit
+      { wpx: 80 },  // Entry Total Amount
+      { wpx: 80 },  // Exit Quantity
+      { wpx: 80 },  // Exit Price Per Unit
+      { wpx: 80 },  // Exit Total Amount
+      { wpx: 80 },  // Balance Quantity
+      { wpx: 80 },  // Balance Price Per Unit
+      { wpx: 80 },  // Balance Total Amount
+    ];
+  
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Fuel Stock History");
+  
+    // Write the file
+    XLSX.writeFile(workbook, "fuel_stock_history.xlsx");
+  };
+ 
+
+  const handleFilter = () => {
+
+    fetchHistory(1, pageSize, startDate, endDate); // Fetch history with filter applied
+
+    setCurrentPage(1); // Reset to the first page
+
+    setIsFiltered(true); // Set filter state to true
+
+  };
+
+
+
+
+
 
   return (
     <div className='fuel-stock-managment'>
@@ -124,7 +295,40 @@ const FuelStockList = () => {
         )}
       </div>
       </div>
+       {/* Date Filter */}
+
+    <div className="date-filter-store-card">
+        <div className="filter-title">
+        <p>Generate the store card according to date range you want to filter</p>
+        </div>
+         <div className="input-date">
+         <label htmlFor="startDate">Start Date:</label>
+
+<input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+
+<label htmlFor="endDate">End Date:</label>
+
+<input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+
+<button onClick={handleFilter}>GENERATE</button>
+         </div>
+         
+       
+          </div>
+          
+          
+          {/* Download Buttons */}
+          
+          <div className="download-buttons">
+       
+          <button className='download-exl-btn' onClick={downloadExcel}>Download Excel</button>
+          
+          </div>
+
+      {/* fuel store card */}
       <div className="fuel-store-card">
+        <div id='pdf-content'>
+
         <div className="form-title">
           <p>REPUBLIC OF RWANDA</p>
           <p>NYABIHU DISTRICT</p>
@@ -189,6 +393,7 @@ const FuelStockList = () => {
               )}
             </tbody>
           </table>
+          
           <div className="pagination">
             <button 
               onClick={() => handlePageChange('prev')} 
@@ -204,8 +409,10 @@ const FuelStockList = () => {
               Next
             </button>
           </div>
+        
         </>
       )}
+      </div>
       </div>
       {showAddFuelTypeForm && (
           <div className="add-overlay">
