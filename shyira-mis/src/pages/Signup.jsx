@@ -52,7 +52,7 @@ const togglePasswordVisibility = () => {
   
         // Generate a unique key for the current tab (optional, can store token directly in sessionStorage)
         const tabId = Date.now() + Math.random().toString(36);
-  
+        
         // Save the token in sessionStorage instead of localStorage
         sessionStorage.setItem(`token_${tabId}`, token);
         
