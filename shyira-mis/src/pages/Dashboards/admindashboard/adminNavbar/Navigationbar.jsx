@@ -6,7 +6,16 @@ import './Navigationbar.css';
 const Navbar = ({ setCurrentPage, isMenuOpen, setIsMenuOpen }) => {
   const navbarRef = useRef(null);
 
-
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/logout`); 
+      sessionStorage.removeItem('currentTab'); // Remove the current session tab ID
+      sessionStorage.clear(); // Clear all session storage data if needed
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
   const handleLinkClick = (page) => {
     setCurrentPage(page);
     setIsMenuOpen(false); // Close the navbar
@@ -28,9 +37,7 @@ const Navbar = ({ setCurrentPage, isMenuOpen, setIsMenuOpen }) => {
 
   return (
     <div ref={navbarRef} className={`adminavbar ${isMenuOpen ? 'open' : ''}`}>
-     <div className="nav-logo">
-      <h1>Lmis</h1>
-      </div>
+      <h2>Admin Dashboard</h2>
       <ul>
         <li onClick={() => handleLinkClick('adminoverview')}><FaHome /> Overview</li>
         <li onClick={() => handleLinkClick('view-Users')}><FaUser  /> Users</li>
@@ -43,8 +50,8 @@ const Navbar = ({ setCurrentPage, isMenuOpen, setIsMenuOpen }) => {
       <h2>Settings</h2>
       <ul>
         <li onClick={() => handleLinkClick('user-profile')}><FaUser  /> Profile</li>
-        <li onClick={() => handleLinkClick('help-center')}><FaBurn /> Help Center</li>
-        
+        <li onClick={() => handleLinkClick('logistic-profile')}><FaBurn /> Help Center</li>
+        <li className='logout-button' onClick={handleLogout}><FaSignOutAlt /> Logout</li>
       </ul>
     </div>
   );

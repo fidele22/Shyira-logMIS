@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Swal from 'sweetalert2'; 
 import AddnewService from './addService'
-import { FaEdit, FaTrash,FaTimes,FaPlus } from 'react-icons/fa';
+import { FaEdit, FaTrash,FaTimes } from 'react-icons/fa';
 import '../css/service.css'
 import axios from 'axios';
 
@@ -13,7 +12,7 @@ const ViewService = () => {
   const [services, setServices] = useState([]);
   const [editService, setEditService] = useState(null);
   const [serviceName, setServiceName] = useState('');
-  const [isAddDepartmentVisible, setIsAddDepartmentVisible] = useState(false); 
+
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -50,50 +49,15 @@ const ViewService = () => {
   };
 
   const handleDelete = async (id) => {
-    const { value: isConfirmed } = await Swal.fire({
-  
-      title: 'Are you sure?,',
-      text: "you want to delete this service?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!', 
-      customClass: {
-        popup: 'custom-swal', // Apply custom class to the popup
-      }
-
-    });
-    if (isConfirmed) {
-      try {
+    try {
       const response = await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/services/${id}`);
       console.log('Delete response:', response.data); // Log the response
       // Fetch updated positions
       const fetchUpdatedPositions = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/services`);
       setServices(fetchUpdatedPositions.data);
-
-      Swal.fire({
-        title:'Deleted!',
-        text:'service has been deleted successully.',
-        icon:'success',
-        customClass:{
-
-          popup: 'custom-swal',
-
-        },
-      }
-      );
     } catch (error) {
       console.error('Error deleting position:', error);
-      Swal.fire(
-
-        'Error!',
-        'Failed to delete this service.',
-        'error'
-
-      );
     }
-  }
   };
   
 
@@ -102,15 +66,14 @@ const ViewService = () => {
        
         <div className="service-table-data">
         <h1>Services Managment</h1>
-        <button className="add-department-btn" onClick={() => setIsAddDepartmentVisible(true)}>
-          <FaPlus /> Add new service
-        </button>
         <table className='table'>
           <thead>
             <tr>
               <th>No</th>
               <th>Name</th>
-              <th>Action</th> 
+              <th>Action</th>
+             
+              
             </tr>
           </thead>
           <tbody>
@@ -148,18 +111,9 @@ const ViewService = () => {
         </div>
         </div>
       )}
-         {isAddDepartmentVisible && (
-        <div className="editing-userdata-overlay">
-          <div className="overlay-content">
-          <button className="close-add-form" onClick={() => setIsAddDepartmentVisible(false)}>
-              <FaTimes />
-            </button>
-            <AddnewService onClose={() => setIsAddDepartmentVisible(false)} />
-            
-          </div>
-        </div>
-      )}
-     
+      <div className="addnew-service">
+        <AddnewService />
+      </div>
     </div>
   );
 };
