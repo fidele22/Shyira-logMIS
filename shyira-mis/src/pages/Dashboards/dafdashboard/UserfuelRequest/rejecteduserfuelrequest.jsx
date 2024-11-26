@@ -10,6 +10,17 @@ const RejectedFuelRequisitionForm = () => {
   const [error, setError] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15); // Set items per page
+  const [totalPages, setTotalPages] = useState(1);
+
+
+  useEffect(() => {
+    // Update total pages when filteredRequests change
+    setTotalPages(Math.ceil(rejectedRequisitions.length / itemsPerPage));
+  }, [rejectedRequisitions, itemsPerPage]);
+
   useEffect(() => {
     const fetchRequisitions = async () => {
       try {
@@ -43,23 +54,44 @@ const RejectedFuelRequisitionForm = () => {
   const handleCloseClick = () => {
     setSelectedRequest(null);
   };
+ // Pagination helpers
+ const indexOfLastItem = currentPage * itemsPerPage;
+ const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+ const currentRequisition = rejectedRequisitions.slice(indexOfFirstItem, indexOfLastItem);
 
+ const nextPage = () => {
+   if (currentPage < totalPages) {
+     setCurrentPage(currentPage + 1);
+   }
+ };
+
+ const prevPage = () => {
+   if (currentPage > 1) {
+     setCurrentPage(currentPage - 1);
+   }
+ };
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <div className="rejected-fuel-requisition-form">
       <h4>List of Fuel Requisitions Rejected</h4>
-      <div className="navigate-fuel-request">
+      <div className="order-navigation">
         <ul>
-          {rejectedRequisitions.slice().reverse().map((request, index) => (
+          {currentRequisition.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
                 FueL Requisition Form  of user {request.hodName} requested on {new Date(request.createdAt).toDateString()}  and rejected on {new Date(request.rejectedAt).toDateString()}
+              <span className='badge-status'>Rejected</span>
               </p>
             </li>
           ))}
         </ul>
+        <div className="pagination-buttons">
+          <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
+          <span>Page {currentPage} of {totalPages}</span>
+          <button onClick={nextPage} disabled={currentPage === totalPages}>Next</button>
+        </div>
       </div>
 
       {selectedRequest && (
@@ -109,7 +141,7 @@ const RejectedFuelRequisitionForm = () => {
                   {selectedRequest && selectedRequest.file ? (
                     <div className="file-uploaded">
                       <label>Previous Destination file:</label>
-                      <a href={`http://localhost:5000/${selectedRequest.file}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.file}`} target="_blank" rel="noopener noreferrer">
                         <FaEye /> View File
                       </a>
                     </div>
@@ -125,7 +157,7 @@ const RejectedFuelRequisitionForm = () => {
                   <label>Prepared By:</label>
                   <span>{selectedRequest.hodName || ''}</span>
                   {selectedRequest.hodSignature && (
-                    <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+                    <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" />
                   )}
                 </div>
               

@@ -12,6 +12,7 @@ const FuelRequisitionForm = () => {
   const [dafUsers, setDafUsers] = useState([]);
 
   useEffect(() => {
+
     const fetchLogisticUsers = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/logistic-users`);
@@ -77,6 +78,8 @@ const FuelRequisitionForm = () => {
       await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/userfuelrequest/reject/${selectedRequest._id}`);
       setRequisitions(requisitions.filter(req => req._id !== selectedRequest._id));
       setSelectedRequest(null);
+
+
       alert('Requisition rejected successfully!');
     } catch (error) {
       console.error('Error rejecting requisition:', error);
@@ -95,12 +98,13 @@ const FuelRequisitionForm = () => {
     <div className="fuel-requisition-form">
       <h4>List of Fuel Requisition that has been approved</h4>
       <label htmlFor=""> Review your requisition was approved </label>
-      <div className="navigate-request">
+      <div className="order-navigation">
         <ul>
           {requisitions.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
                 Requisition Form from {request.department} done on {new Date(request.createdAt).toDateString()}
+              <span className='status-approved'>Approved</span>
               </p>
             </li>
           ))}
@@ -161,7 +165,7 @@ const FuelRequisitionForm = () => {
                   {selectedRequest && selectedRequest.file ? (
                     <div className='file-uploaded'>
                       <label>Previous Destination file:</label>
-                      <a href={`http://localhost:5000/${selectedRequest.file}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.file}`} target="_blank" rel="noopener noreferrer">
                         <FaEye /> View File
                       </a>
                     </div>
@@ -176,7 +180,7 @@ const FuelRequisitionForm = () => {
                   <h3>Head Of department:</h3>
                   <label>Prepared By:</label>
                   <span>{selectedRequest.hodName || ''}</span>
-                  <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+                  <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" />
                 </div>
                 <div className='logistic-signature'>
                   <h3>Logistic Office:</h3>
@@ -185,7 +189,7 @@ const FuelRequisitionForm = () => {
                     <div key={user._id} className="logistic-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}
@@ -199,7 +203,7 @@ const FuelRequisitionForm = () => {
                     <div key={user._id} className="logistic-user">
                       <p>{user.firstName} {user.lastName}</p>
                       {user.signature ? (
-                        <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                        <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
                       ) : (
                         <p>No signature available</p>
                       )}

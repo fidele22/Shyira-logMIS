@@ -1,5 +1,5 @@
 .navigation {
-    width: 15%;
+    width: 14%;
     background-color: #2c3b50;
     position: fixed;
     height: 100%;
@@ -12,9 +12,17 @@
     box-shadow: 0 1px 3px -2px black;
   }
   
-  .navigation h2 {
-    margin: 0 0 20px;
-    font-size: 14px;
+  .nav-logo{
+    background-color: #3e8cda;
+    border-radius: 30%;
+  }
+  .navigation h1 {
+    padding: 5px;
+    font-size: 40px;
+    color:white;
+    font-weight: 800;
+    font-family:'Times New Roman', Times, serif;
+  
   }
   
   .navigation ul {
@@ -50,4 +58,7 @@
   .navigation ul li:hover {
     color: brown;
   }
-  
+  .logout{
+    position: absolute;
+    bottom: 5%;
+  }

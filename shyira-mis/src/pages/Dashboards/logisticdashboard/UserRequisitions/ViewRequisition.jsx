@@ -3,7 +3,8 @@ import { FaQuestionCircle, FaCheckCircle,FaEdit,FaTimesCircle, FaTimes, FaTrash 
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import './recievedRequest.css'; // Import CSS for styling
+import Swal from 'sweetalert2'; 
+import '../contentCss/itemrequisition.css'
 
 const LogisticRequestForm = () => {
 
@@ -12,12 +13,6 @@ const LogisticRequestForm = () => {
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  
-  const [showModal, setShowModal] = useState(false); // State for modal visibility
-  const [modalMessage, setModalMessage] = useState(''); //
-  const [isSuccess, setIsSuccess] = useState(true);
-
-
   const [editFormData, setEditFormData] = useState({
     
   
@@ -40,7 +35,7 @@ const LogisticRequestForm = () => {
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/UserRequest');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest`);
       setRequests(response.data);
       setFilteredRequests(response.data); // Initialize filteredRequests with all requests
     } catch (error) {
@@ -52,7 +47,7 @@ const LogisticRequestForm = () => {
   
   const handleRequestClick = async (requestId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/UserRequest/${requestId}`);
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/${requestId}`);
       setSelectedRequest(response.data);
       setEditFormData(response.data);
       setIsEditing(false);
@@ -77,62 +72,115 @@ const LogisticRequestForm = () => {
     setIsEditing(false);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData({
-      ...editFormData,
-      [name]: value
-    });
-  };
-
   const handleItemChange = (index, e) => {
     const { name, value } = e.target;
-    const updatedItems = editFormData.items.map((item, idx) => 
-      idx === index ? { ...item, [name]: value } : item
-    );
+    const updatedItems = editFormData.items.map((item, idx) => {
+      if (idx === index) {
+        // Check if the input is for "Quantity Received" and validate
+        if (name === "quantityReceived" && parseInt(value) > parseInt(item.quantityRequested)) {
+          Swal.fire({
+            title: 'Error!',
+            text: 'Quantity received cannot be greater than quantity requested.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            customClass: {
+              popup: 'custom-swal', // Apply custom class to the popup
+            }
+          });
+          return item; // Don't update this field if the value is invalid
+        }
+        // Update the field if the validation passes
+        return { ...item, [name]: value };
+      }
+      return item;
+    });
     setEditFormData({
       ...editFormData,
       items: updatedItems
     });
   };
+  
 
   const handleUpdateSubmit = async () => {
   
     try {
-      await axios.put(`http://localhost:5000/api/UserRequest/${selectedRequest._id}`, editFormData, { clicked: true });
+      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/${selectedRequest._id}`, editFormData, { clicked: true });
       
-      setModalMessage('Requisition Updated successfull!!');
-      setIsSuccess(true); // Set the error state
-      setShowModal(true); // Show the modal
+       // Show success message using SweetAlert2
+       Swal.fire ({
+        title: 'Success!',
+        text: 'requisition updated successfully',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        customClass: {
+          popup: 'custom-swal', // Apply custom class to the popup
+        }
+      });
       fetchRequests(); // Refresh the list of requests
       setSelectedRequest(null); // Close the details view
 
      
     } catch (error) {
       console.error('Error updating request:', error);
-      setModalMessage('Failed to Update requisition!');
-      setIsSuccess(false); // Set the error state
-      setShowModal(true); // Show the modal
+       // Show error message using SweetAlert2
+       Swal.fire({
+        title: 'Error!',
+        text: 'Failed to update requisition',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        customClass: {
+          popup: 'custom-swal', // Apply custom class to the popup
+        }
+      });
     }
   };
 //send verified
 const handleVerifySubmit = async () => {
   
-  try {
-    await axios.put(`http://localhost:5000/api/UserRequest/verified/${selectedRequest._id}`, { clicked: true });
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'Do you want to verify this requisition with signing?,',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, verify it!',
+    customClass: {
+      popup: 'custom-swal', // Apply custom class to the popup
+    }
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+    await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/verified/${selectedRequest._id}`, { clicked: true });
   
-    setModalMessage('Requisition Verified and removed on this list successfull!');
-    setIsSuccess(true); // Set the error state
-    setShowModal(true); // Show the modal
+      // Show success message using SweetAlert2
+      Swal.fire ({
+        title: 'Success!',
+        text: 'requisition verified successfully',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        customClass: {
+          popup: 'custom-swal', // Apply custom class to the popup
+        }
+      });
     fetchRequests(); // Refresh the list of requests
     setSelectedRequest(null); // Close the details view
 
   } catch (error) {
     console.error('Error updating request:', error);
-    setModalMessage('Failed to verify requisition!!');
-    setIsSuccess(false); // Set the error state
-    setShowModal(true); // Show the modal
+      // Show error message using SweetAlert2
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to verify requisition',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        customClass: {
+          popup: 'custom-swal', // Apply custom class to the popup
+        }
+      });
   }
+}
+});
 };
 
   // Function to generate and download PDF
@@ -142,24 +190,28 @@ const handleVerifySubmit = async () => {
       console.error('Element with ID pdf-content not found');
       return;
     }
-    
+  
     try {
-      const canvas = await html2canvas(input);
+      // Use html2canvas to capture the content of the div, including the image signatures
+      const canvas = await html2canvas(input, {
+        allowTaint: true,
+        useCORS: true, // This allows images from different origins to be included in the canvas
+      });
+  
       const data = canvas.toDataURL('image/png');
-
-      const pdf = new jsPDF();
+      const pdf = new jsPDF('p', 'mm', 'a4');
       const imgProps = pdf.getImageProperties(data);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 20; // Subtract the margin from the width
-      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-      pdf.addImage(data, 'PNG', 10, 10, imgWidth, imgHeight); // 10 is the margin
-      pdf.save('requisition-form.pdf');
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  
+      // Add the image content into the PDF and download
+      pdf.addImage(data, 'PNG', 10, 10, pdfWidth - 20, pdfHeight); // Adjust the margins if needed
+      pdf.save('requisition-form-with-signatures.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
   };
+  
 
   const handleSearchChange = (e) => {
     const { name, value } = e.target;
@@ -204,7 +256,7 @@ const handleVerifySubmit = async () => {
         }
 
         // Use Axios to fetch user profile
-        const response = await axios.get('http://localhost:5000/api/users/profile', {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -222,27 +274,57 @@ const handleVerifySubmit = async () => {
 
 
   const handleRejectClick = async (requestId) => {
-    try {
-      await axios.put(`http://localhost:5000/api/UserRequest/rejected/${requestId}`, { clicked: true });
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you want to reject this requisition?, you will not be able to revert.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, reject it!',
+      customClass: {
+        popup: 'custom-swal', // Apply custom class to the popup
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/rejected/${requestId}`, { clicked: true });
       
-      setModalMessage(' requisition rejected Successful!!');
-      setIsSuccess(true); // Set the success state
-      setShowModal(true); // Show the modal
+       // Show success message using SweetAlert2
+       Swal.fire ({
+        title: 'Success!',
+        text: ' requisition rejected Successful!!',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        customClass: {
+          popup: 'custom-swal', // Apply custom class to the popup
+        }
+      });
       fetchRequests(); // Refresh the list of requests
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error marking request as received:', error);
    
-      setModalMessage('Failed to reject requisition');
-      setIsSuccess(false); // Set the success state
-      setShowModal(true); // Show the modal
+         // Show error message using SweetAlert2
+         Swal.fire({
+          title: 'Error!',
+          text: 'Failed to reject this requisition',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          customClass: {
+            popup: 'custom-swal', // Apply custom class to the popup
+          }
+        });
     }
+  }
+});
+
   };
   if (!user) return <p>Loading...</p>;
 
   return (
-    <div className={`requist ${selectedRequest ? 'dim-background' : ''}`}>
-      <h2>Requisition from different department</h2>
+    <div className={`request ${selectedRequest ? 'dim-background' : ''}`}>
+
 
       <form onSubmit={handleSearchSubmit}>
         <div className="search-form">
@@ -272,22 +354,29 @@ const handleVerifySubmit = async () => {
         </div>
        
       </form>
+      <div className="order-navigation">
+        <div className="navigation-title">
+          <h2>Requisition of items form different department</h2>
+        </div>
+        {filteredRequests.length > 0 ? (
+        <ul>
+          {filteredRequests.slice().reverse().map((request, index) => (
+            <li key={index}>
+              <p onClick={() => handleRequestClick(request._id)}>
+                Requisition Form of item from <b>{request.department}</b> done on {new Date(request.createdAt).toDateString()}
+               
+              </p>
 
-      <div className="navigate-request">
-      <ul>
-    {filteredRequests.slice().reverse().map((request, index) => (
-      <li key={index}>
-       
-        <p onClick={() => handleRequestClick(request._id)}>
-          Requisition Form from {request.department} done on {new Date(request.createdAt).toDateString()}
-          <span>{!request.clicked ? 'New Request' : ''}</span>
-         
-        </p>
-        <p className='mark-received-btn' onClick={() => handleRejectClick(request._id)}>Reject </p> 
-      </li>
+            </li>
+            
+          ))}
+        </ul>
+      ) : (
+  <p>No requests found for the given search criteria.</p>
+)}
+   
       
-    ))}
-  </ul>
+  
       </div>
    
       {selectedRequest && (
@@ -355,7 +444,7 @@ const handleVerifySubmit = async () => {
                
                 <div className="buttons">
                 <button className='submit-an-update' onClick={handleUpdateSubmit}>update</button>
-                <button className='request-cancel-btn' onClick={handleCancelEdit}>Cancel</button>
+                <button className='update-cancel-btn' onClick={handleCancelEdit}>Cancel</button>
                 
                 </div>
                
@@ -371,6 +460,7 @@ const handleVerifySubmit = async () => {
           <button className='verify-requisition' onClick={ handleVerifySubmit}>Verify Request</button>
           <button className='request-dowload-btn' onClick={downloadPDF}>Download Pdf</button>
           <button className='request-edit-btn' onClick={handleEditClick}>Edit</button>
+          <button onClick={() => handleRejectClick(selectedRequest._id)} className="reject-button">Reject request </button>
           <button></button>
              <label className='request-close-btn' onClick={() => setSelectedRequest(null)}><FaTimes /></label>
           </div>
@@ -387,7 +477,7 @@ const handleVerifySubmit = async () => {
             <h1>DISTRIC: NYABIHU</h1>
             <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
             <h1>DEPARTMENT: <span>{editFormData.department}</span> </h1>
-          
+            <h1>SERVICE: <span>{editFormData.service}</span> </h1>
 
           </div>
            
@@ -416,12 +506,12 @@ const handleVerifySubmit = async () => {
                 </table>
 
                 <div className="signature-section">
-                  <div className="hod">
-                  <label htmlFor="hodName">Name of HOD:</label>
+                  <div className="hod-signature">
+                  <label className="signature-title">Name of head of {selectedRequest.department}:</label>
                     {selectedRequest.hodName && <p>{selectedRequest.hodName}</p>}
-                    <label htmlFor="hodSignature">HOD Signature:</label>
+                    <label htmlFor="hodSignature">Signature:</label>
                     {selectedRequest.hodSignature ? (
-                      <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+                      <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" className='signature-img'/>
                     ) : (
                       <p>No HOD signature available</p>
                     )}
@@ -432,7 +522,9 @@ const handleVerifySubmit = async () => {
                   
 
                 </div>
-                <hr />
+                <div className='footer-img'>
+                   <img src="/image/footerimg.png" alt="Logo" className="logo" />
+                </div>
                 </div>
               </>
              
@@ -441,25 +533,7 @@ const handleVerifySubmit = async () => {
          
        </div>
       )}
-       {/* Modal pop message on success or error message */}
-     {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            {isSuccess ? (
-              <div className="modal-success">
-                <FaCheckCircle size={54} color="green" />
-                <p>{modalMessage}</p>
-              </div>
-            ) : (
-              <div className="modal-error">
-                <FaTimesCircle size={54} color="red" />
-                <p>{modalMessage}</p>
-              </div>
-            )}
-            <button onClick={() => setShowModal(false)}>Close</button>
-          </div>
-        </div>
-      )}
+   
       </div>
     
   );

@@ -4,7 +4,7 @@ import { FaQuestionCircle, FaEdit, FaTimes, FaCheck, FaCheckCircle, FaCheckDoubl
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-//import './approvedrequest.css'; // Import CSS for styling
+import '../contentCss/itemrequisition.css'
 
 const ApprovedRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -21,6 +21,10 @@ const ApprovedRequests = () => {
   const [logisticUsers, setLogisticUsers] = useState([]);
   const [dafUsers, setDafUsers] = useState([]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5); // Set items per page
+  const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
     fetchApprovedRequests();
     fetchLogisticUsers(); // Fetch logistic users name and signature on component mount
@@ -29,7 +33,7 @@ const ApprovedRequests = () => {
 
   const fetchLogisticUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users/logistic-users');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/logistic-users`);
       setLogisticUsers(response.data);
     } catch (error) {
       console.error('Error fetching logistic users:', error);
@@ -38,16 +42,22 @@ const ApprovedRequests = () => {
   //fetch daf username and signature
   const fetchDafUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users/daf-users');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/daf-users`);
       setDafUsers(response.data);
     } catch (error) {
       console.error('Error fetching daf users:', error);
     }
   };
+
+  useEffect(() => {
+    // Update total pages when filteredRequests change
+    setTotalPages(Math.ceil(filteredRequests.length / itemsPerPage));
+  }, [filteredRequests, itemsPerPage]);
+
   //fetching recieved request from approved collection
   const fetchApprovedRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/UserRequest/recieved-request');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/recieved-request`);
      
       setRequests(response.data);
       setFilteredRequests(response.data); 
@@ -58,13 +68,13 @@ const ApprovedRequests = () => {
   //fetch with clicking 
   const handleRequestClick = async (requestId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/UserRequest/recieved-request/${requestId}`);
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/recieved-request/${requestId}`);
       setSelectedRequest(response.data);
       setApprovedRequests(response.data);
    
 
       // Update the clicked status to true
-      await axios.put(`http://localhost:5000/api/UserRequest/recieved-request/${requestId}`, { clicked: true });
+      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/UserRequest/recieved-request/${requestId}`, { clicked: true });
 
       // Refresh the requests list
       fetchApprovedRequests();
@@ -120,11 +130,30 @@ const ApprovedRequests = () => {
   }
 };
 
+ // Pagination helpers
+ const indexOfLastItem = currentPage * itemsPerPage;
+ const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+ const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+
+ const nextPage = () => {
+   if (currentPage < totalPages) {
+     setCurrentPage(currentPage + 1);
+   }
+ };
+
+ const prevPage = () => {
+   if (currentPage > 1) {
+     setCurrentPage(currentPage - 1);
+   }
+ };
+
+
   return (
-    <div className="approved-requests-page">
-      <h2>requisition for items have been signed that was recieved</h2>
-      <form onSubmit={handleSearchRequest} className="search-form">
-       <div className='search-department'>
+    <div className="request">
+    
+      <form onSubmit={handleSearchRequest}>
+        <div className="search-form">
+        <div className='search-department'>
         <label htmlFor="">Search by department</label>
        <input
           type="text"
@@ -147,24 +176,35 @@ const ApprovedRequests = () => {
         </div>
         
         <button type="submit" className='search-btn'>Search</button>
+        </div>
+       
       </form>
 
-      <div className="approved-navigate-request">
+      <div className="order-navigation">
+        <div className="navigation-title">
+        <h2>Requisition for items have been signed that was recieved</h2>
+        </div>
         <ul>
-          {filteredRequests.slice().reverse().map((request, index) => (
+          {currentItems.slice().reverse().map((request, index) => (
             <li key={index}>
               <p onClick={() => handleRequestClick(request._id)}>
               Requisition Form from department of <b>{request.department}</b> done on {new Date(request.createdAt).toDateString()}
-              <span>{request.clicked ? '' : 'New Request: '}</span> <label htmlFor=""><FaCheckDouble />Marked as Recieved</label>
+           <span className='status-badge'><FaCheckDouble />Marked as Recieved</span>
             </p>
             </li>
           ))}
         </ul>
+        <div className="pagination-buttons">
+          <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
+          <span>Page {currentPage} of {totalPages}</span>
+          <button onClick={nextPage} disabled={currentPage === totalPages}>Next</button>
+        </div>
       </div>
+     
 
       {selectedRequest && (
 
-        <div className="approved-request-overlay">
+        <div className="request-details-overlay">
 
          <div className="form-navigation">
          <button className='request-dowload-btn' onClick={downloadPDF}>Download Pdf</button>
@@ -180,8 +220,9 @@ const ApprovedRequests = () => {
             <h1>DISTRIC: NYABIHU</h1>
             <h1>HEALTH FACILITY: SHYIRA DISTRICT HOSPITAL</h1>
             <h1>DEPARTMENT: <span>{selectedRequest.department}</span> </h1>
-
+            <u><h2>REQUISITON FORM</h2></u>  
           </div>
+
          <table>
            <thead>
              <tr>
@@ -204,25 +245,25 @@ const ApprovedRequests = () => {
              ))}
            </tbody>
          </table>
-         <div className="approved-signature-section">
-           <div >
-             <h3>HOD Name:</h3>
+         <div className="signature-section">
+         <div className='hod-signature'>
+         <label className='signature-title'>Name of head of {selectedRequest.department}</label>
              <label>prepared By:</label> 
             <p>{selectedRequest.hodName}</p>
              {selectedRequest.hodSignature ? (
-               <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+               <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" className='signature-img'/>
              ) : (
                <p>No HOD signature available</p>
              )}
            </div>
            <div className='logistic-signature'>
-                  <h3>Logistic Office:</h3>
-                  <label htmlFor="">Verified By:</label>
                     {logisticUsers.map(user => (
-                      <div key={user._id} className="logistic-user">
+                      <div key={user._id} className="logistic-signature">
+                         <label className='signature-title'>Logistic Office</label>
+                         <label htmlFor="">Verified By:</label>
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="signature" className='signature-img' />
                         ) : (
                           <p>No signature available</p>
                         )}
@@ -230,40 +271,44 @@ const ApprovedRequests = () => {
                     ))}
                   </div>
          <div className="daf-signature">
-         <h3>DAF:</h3>
-         <label htmlFor="">Approved By:</label>
          {dafUsers.map(user => (
-                      <div key={user._id} className="logistic-user">
+                      <div key={user._id} className="daf-signature">
+                        <label className='signature-title'>DAF</label>
+                        <label htmlFor="">Approved By:</label>
                         <p>{user.firstName} {user.lastName}</p>
                         {user.signature ? (
-                          <img src={`http://localhost:5000/${user.signature}`} alt={`${user.firstName} ${user.lastName} Signature`} />
+                          <img src={`${process.env.REACT_APP_BACKEND_URL}/${user.signature}`} alt="signature" className='signature-img' />
                         ) : (
                           <p>No signature available</p>
                         )}
                       </div>
                     ))}
           </div>  
-          <div className="received-signature">
-          <div >
-             <h3>HOD Name:</h3>
+        
+          <div className='hod-signature'>
+          <label className='signature-title'>Name of head of {selectedRequest.department}</label>
              <label>Recieved By:</label> 
             <p>{selectedRequest.hodName}</p>
              {selectedRequest.hodSignature ? (
-               <img src={`http://localhost:5000/${selectedRequest.hodSignature}`} alt="HOD Signature" />
+               <img src={`${process.env.REACT_APP_BACKEND_URL}/${selectedRequest.hodSignature}`} alt="HOD Signature" 
+               className='signature-img' />
              ) : (
                <p>No HOD signature available</p>
              )}
            </div>
-            </div>       
+                
          </div>
+         <div className='footer-img'>
+         <img src="/image/footerimg.png" alt="Logo" className="logo" />
+        </div>
          </div>
         
         
        </div>
        </div>
    )}
-
-        </div>
+  
+  </div>
           
   );
 };
